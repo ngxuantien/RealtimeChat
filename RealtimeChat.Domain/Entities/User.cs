@@ -2,14 +2,11 @@
 using MongoDB.Bson.Serialization.Attributes;
 using RealtimeChat.Domain.Enums;
 
-namespace RealtimeChat.Domain.Entites;
+namespace RealtimeChat.Domain.Entities;
 
-public class User
+[BsonIgnoreExtraElements]
+public class User : BaseEntity
 {
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id_User { get; set; } = string.Empty;
-
     [BsonElement("displayName")]
     public string DisplayName { get; set; } = string.Empty;
 
@@ -26,20 +23,12 @@ public class User
     public string? Bio { get; set; }
 
     [BsonElement("status")]
+    [BsonRepresentation(BsonType.String)]
     public UserStatus Status { get; set; } = UserStatus.Active;
 
     [BsonElement("isOnline")]
-    public bool IsOnline { get; set; }
+    public bool IsOnline { get; set; } = false;
 
     [BsonElement("lastSeenAt")]
     public DateTime? LastSeenAt { get; set; }
-
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    [BsonElement("updatedAt")]
-    public DateTime? UpdatedAt { get; set; }
-
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
 }

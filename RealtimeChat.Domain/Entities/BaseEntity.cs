@@ -1,0 +1,20 @@
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace RealtimeChat.Domain.Entities;
+
+public abstract class BaseEntity
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string Id { get; set; } = string.Empty;
+
+    [BsonElement("createdAt")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    public DateTime? UpdatedAt { get; set; }
+
+    [BsonElement("deletedAt")]
+    public DateTime? DeletedAt { get; set; }
+}
