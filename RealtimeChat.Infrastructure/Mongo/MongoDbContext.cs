@@ -19,4 +19,16 @@ public class MongoDbContext
 
     public IMongoCollection<User> Users =>
         _database.GetCollection<User>("users");
+
+    public IMongoCollection<Conversation> Conversations =>
+        _database.GetCollection<Conversation>("conversations");
+
+    public IMongoCollection<ConversationMember> ConversationMembers =>
+        _database.GetCollection<ConversationMember>("conversationMembers");
+
+    public IMongoCollection<Message> Messages =>
+        _database.GetCollection<Message>("messages");
+
+    public IMongoCollection<UserConnection> UserConnections =>
+        _database.GetCollection<UserConnection>("userconnections");
 }
