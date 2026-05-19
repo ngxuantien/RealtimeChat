@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Domain.Entities;
 
 namespace RealtimeChat.Infrastructure.Mongo;
 
-public class MongoDbContext
+public class MongoDbContext : IChatDbContext
 {
     private readonly IMongoDatabase _database;
 

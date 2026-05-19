@@ -1,3 +1,7 @@
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using RealtimeChat.Application.Service;
+using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Infrastructure.Mongo;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,7 +12,14 @@ builder.Services.AddOpenApi();
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDbSettings"));
 
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
+    return new MongoClient(settings.ConnectionString);
+});
+
 builder.Services.AddSingleton<MongoDbContext>();
+builder.Services.AddSingleton<IChatDbContext, MongoDbContext>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
