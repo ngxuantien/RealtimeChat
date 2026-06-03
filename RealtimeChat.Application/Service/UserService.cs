@@ -1,4 +1,5 @@
 ﻿using RealtimeChat.Application.DTOs.Users;
+using RealtimeChat.Application.Repositories.Interfaces;
 using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Domain.Entities;
 
@@ -7,16 +8,36 @@ namespace RealtimeChat.Application.Service;
 
 public class UserService : IUserService
 {
-    private readonly IChatDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UserService(IChatDbContext context)
+    public UserService(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
-    public Task<User> CreateUserAsync(CreateUserRequest createUserRequest)
+    public async Task<User> CreateUserAsync(CreateUserRequest createUserRequest)
     {
-        throw new NotImplementedException();
+        var userRepo = _unitOfWork.GetRepositoryAsync<User>();
+
+        var existedUser = await userRepo.FirstOrDefaultAsync(x => x.Email == createUserRequest.Email);
+
+        if (existedUser != null)
+        {
+            throw new Exception("Email already exists");
+        }
+
+        var user = new User
+        {
+            DisplayName = createUserRequest.DisplayName,
+            Email = createUserRequest.Email,
+            AvatarUrl = createUserRequest.AvatarUrl,
+            Bio = createUserRequest.Bio,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await userRepo.AddAsync(user);
+
+        return user;
     }
 
     public Task<List<User>> GetAllUserAsync()

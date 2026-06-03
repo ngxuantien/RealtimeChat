@@ -5,7 +5,7 @@ using RealtimeChat.Domain.Entities;
 
 namespace RealtimeChat.Infrastructure.Mongo;
 
-public class MongoDbContext : IChatDbContext
+public class MongoDbContext
 {
     private readonly IMongoDatabase _database;
 
@@ -18,18 +18,26 @@ public class MongoDbContext : IChatDbContext
         _database = client.GetDatabase(settings.DatabaseName);
     }
 
-    public IMongoCollection<User> Users =>
-        _database.GetCollection<User>("users");
+    public IMongoCollection<TEntity> GetCollection<TEntity>() 
+        where TEntity : class
+    {
+        var collectionName = typeof(TEntity).Name;
 
-    public IMongoCollection<Conversation> Conversations =>
-        _database.GetCollection<Conversation>("conversations");
+        return _database.GetCollection<TEntity>(collectionName);
+    }
 
-    public IMongoCollection<ConversationMember> ConversationMembers =>
-        _database.GetCollection<ConversationMember>("conversationMembers");
+    //public IMongoCollection<User> Users =>
+    //    _database.GetCollection<User>("users");
 
-    public IMongoCollection<Message> Messages =>
-        _database.GetCollection<Message>("messages");
+    //public IMongoCollection<Conversation> Conversations =>
+    //    _database.GetCollection<Conversation>("conversations");
 
-    public IMongoCollection<UserConnection> UserConnections =>
-        _database.GetCollection<UserConnection>("userconnections");
+    //public IMongoCollection<ConversationMember> ConversationMembers =>
+    //    _database.GetCollection<ConversationMember>("conversationMembers");
+
+    //public IMongoCollection<Message> Messages =>
+    //    _database.GetCollection<Message>("messages");
+
+    //public IMongoCollection<UserConnection> UserConnections =>
+    //    _database.GetCollection<UserConnection>("userconnections");
 }

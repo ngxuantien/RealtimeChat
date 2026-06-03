@@ -23,22 +23,26 @@ public class MongoDbIndexInitializer
 
     private async Task CreateUserIndexesAsync()
     {
+        var users = _context.GetCollection<User>();
+
         var emailIndex = new CreateIndexModel<User>(
             Builders<User>.IndexKeys.Ascending(x => x.Email),
             new CreateIndexOptions { Unique = true });
 
-        await _context.Users.Indexes.CreateOneAsync(emailIndex);
+        await users.Indexes.CreateOneAsync(emailIndex);
     }
 
     private async Task CreateConversationIndexesAsync()
     {
+        var conversations = _context.GetCollection<Conversation>();
+
         var lastMessageIndex = new CreateIndexModel<Conversation>(
             Builders<Conversation>.IndexKeys.Descending(x => x.LastMessageAt));
 
         var createdByIndex = new CreateIndexModel<Conversation>(
             Builders<Conversation>.IndexKeys.Ascending(x => x.CreatedBy));
 
-        await _context.Conversations.Indexes.CreateManyAsync([
+        await conversations.Indexes.CreateManyAsync([
             lastMessageIndex,
             createdByIndex
         ]);
@@ -46,6 +50,8 @@ public class MongoDbIndexInitializer
 
     private async Task CreateConversationMemberIndexesAsync()
     {
+        var conversationMembers = _context.GetCollection<ConversationMember>();
+
         var uniqueMemberIndex = new CreateIndexModel<ConversationMember>(
             Builders<ConversationMember>.IndexKeys
                 .Ascending(x => x.ConversationId)
@@ -58,7 +64,7 @@ public class MongoDbIndexInitializer
         var conversationIndex = new CreateIndexModel<ConversationMember>(
             Builders<ConversationMember>.IndexKeys.Ascending(x => x.ConversationId));
 
-        await _context.ConversationMembers.Indexes.CreateManyAsync([
+        await conversationMembers.Indexes.CreateManyAsync([
             uniqueMemberIndex,
             userIndex,
             conversationIndex
@@ -67,6 +73,8 @@ public class MongoDbIndexInitializer
 
     private async Task CreateMessageIndexesAsync()
     {
+        var messages = _context.GetCollection<Message>();
+
         var conversationCreatedAtIndex = new CreateIndexModel<Message>(
             Builders<Message>.IndexKeys
                 .Ascending(x => x.ConversationId)
@@ -75,7 +83,7 @@ public class MongoDbIndexInitializer
         var senderIndex = new CreateIndexModel<Message>(
             Builders<Message>.IndexKeys.Ascending(x => x.SenderId));
 
-        await _context.Messages.Indexes.CreateManyAsync([
+        await messages.Indexes.CreateManyAsync([
             conversationCreatedAtIndex,
             senderIndex
         ]);
@@ -83,6 +91,8 @@ public class MongoDbIndexInitializer
 
     private async Task CreateUserConnectionIndexesAsync()
     {
+        var userConnections = _context.GetCollection<UserConnection>();
+
         var connectionIndex = new CreateIndexModel<UserConnection>(
             Builders<UserConnection>.IndexKeys.Ascending(x => x.ConnectionId),
             new CreateIndexOptions { Unique = true });
@@ -90,9 +100,10 @@ public class MongoDbIndexInitializer
         var userIndex = new CreateIndexModel<UserConnection>(
             Builders<UserConnection>.IndexKeys.Ascending(x => x.UserId));
 
-        await _context.UserConnections.Indexes.CreateManyAsync([
+        await userConnections.Indexes.CreateManyAsync(new[]
+        {
             connectionIndex,
-            userIndex
-        ]);
+            userIndex,
+        });
     }
 }
