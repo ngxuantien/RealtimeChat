@@ -1,4 +1,6 @@
-﻿using RealtimeChat.Application.DTOs.Users;
+﻿using BCrypt.Net;
+using MongoDB.Driver;
+using RealtimeChat.Application.DTOs.Users;
 using RealtimeChat.Application.Repositories.Interfaces;
 using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Domain.Entities;
@@ -30,14 +32,28 @@ public class UserService : IUserService
         {
             DisplayName = createUserRequest.DisplayName,
             Email = createUserRequest.Email,
-            AvatarUrl = createUserRequest.AvatarUrl,
-            Bio = createUserRequest.Bio,
-            CreatedAt = DateTime.UtcNow
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserRequest.Password)
         };
 
-        await userRepo.AddAsync(user);
-
-        return user;
+        try
+        {
+            await userRepo.AddAsync(user);
+            return new User
+            {
+                Id = user.Id,
+                DisplayName = user.DisplayName,
+                Email = user.Email,
+                AvatarUrl = user.AvatarUrl,
+                Bio = user.Bio,
+                IsOnline = user.IsOnline
+            };
+        }
+        catch (MongoWriteException ex)
+            when (ex.WriteError?.Category ==
+                  ServerErrorCategory.DuplicateKey)
+        {
+            throw new Exception("Email already exists");
+        }
     }
 
     public Task<List<User>> GetAllUserAsync()
@@ -45,9 +61,11 @@ public class UserService : IUserService
         throw new NotImplementedException();
     }
 
-    public Task<User?> GetUserByIdAsync(string id)
+    public async Task<User?> GetUserByIdAsync(string id)
     {
-        throw new NotImplementedException();
+        var result = _unitOfWork.GetRepositoryAsync<User>();
+
+        return await result.FindByIdAsync(id);
     }
 
     public Task<List<User>> SearchUserAsync(string keyword)

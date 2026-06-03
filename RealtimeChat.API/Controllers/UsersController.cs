@@ -9,7 +9,7 @@ using RealtimeChat.Infrastructure.Mongo;
 namespace RealtimeChat.API.Controllers;
 
 [ApiController]
-[Route("api/test-mongo")]
+[Route("api/users")]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;

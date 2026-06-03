@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using RealtimeChat.Application.Repositories.Interfaces;
+using RealtimeChat.Application.Service;
+using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Infrastructure.Mongo;
 using RealtimeChat.Infrastructure.Repositories;
 
@@ -8,7 +10,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(option =>
+{
+    option.SwaggerDoc("v1", new()
+    {
+        Title = "Realtime Chat API",
+        Version = "v1"
+    });
+});
 builder.Services.AddOpenApi();
 
 builder.Services.Configure<MongoDbSettings>(
@@ -23,6 +32,7 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 builder.Services.AddSingleton<MongoDbContext>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<MongoDbIndexInitializer>();
 
@@ -39,7 +49,10 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(option =>
+    {
+        option.SwaggerEndpoint("/swagger/v1/swagger.json", "Realtime Chat API v1");
+    });
     app.MapOpenApi();
 }
 
