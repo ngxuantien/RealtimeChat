@@ -1,5 +1,7 @@
 ﻿using BCrypt.Net;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using RealtimeChat.Application.DTOs.Users;
 using RealtimeChat.Application.Repositories.Interfaces;
 using RealtimeChat.Application.Service.Interfaces;
@@ -58,18 +60,71 @@ public class UserService : IUserService
 
     public Task<List<User>> GetAllUserAsync()
     {
-        throw new NotImplementedException();
+        var result = _unitOfWork.GetRepositoryAsync<User>();
+
+        return result.GetAllAsync();
     }
 
-    public async Task<User?> GetUserByIdAsync(string id)
+    public async Task<User?> GetUserByIdAsync(string id_user)
     {
         var result = _unitOfWork.GetRepositoryAsync<User>();
 
-        return await result.FindByIdAsync(id);
+        return await result.GetByIdAsync(id_user);
     }
 
-    public Task<List<User>> SearchUserAsync(string keyword)
+    public async Task<List<User>> SearchUserAsync(string keyword)
     {
-        throw new NotImplementedException();
+        var filter = Builders<User>.Filter.Or(
+            Builders<User>.Filter.Regex(
+                x => x.DisplayName,
+                new BsonRegularExpression(keyword, "i")),
+            Builders<User>.Filter.Regex(
+                x => x.Email,
+                new BsonRegularExpression(keyword, "i"))
+        );
+
+        return await _unitOfWork.GetRepositoryAsync<User>().FindAsync(filter);
+    }
+
+    public async Task<bool> DeleteUserAsync(string id_user)
+    {
+        var repository = _unitOfWork.GetRepositoryAsync<User>();
+
+        var user = repository.GetByIdAsync(id_user);
+
+        if (user == null)
+        {
+            return false;
+        }
+
+        await repository.DeleteAsync(id_user);
+        return true;
+    }
+
+    public async Task<User?> UpdateUserAsync(string id_user, UpdateUserRequest request)
+    {
+        var repository = _unitOfWork.GetRepositoryAsync<User>();
+
+        var user = await repository.GetByIdAsync(id_user);
+
+        if(user == null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.DisplayName))
+            user.DisplayName = request.DisplayName;
+
+        if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
+            user.AvatarUrl = request.AvatarUrl;
+
+        if (!string.IsNullOrWhiteSpace(request.Bio))
+            user.Bio = request.Bio;
+
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await repository.UpdateAsync(id_user, user);
+
+        return user;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using MongoDB.Driver;
 using RealtimeChat.Application.Repositories.Interfaces;
+using RealtimeChat.Domain.Entities;
 using RealtimeChat.Infrastructure.Mongo;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ namespace RealtimeChat.Infrastructure.Repositories
         }
 
         public IRepositoryAsync<TEntity> GetRepositoryAsync<TEntity>()
-            where TEntity : class
+            where TEntity : BaseEntity
         {
             var type = typeof(TEntity);
 
