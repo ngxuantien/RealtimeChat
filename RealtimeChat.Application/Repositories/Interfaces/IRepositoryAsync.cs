@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MongoDB.Driver;
+using RealtimeChat.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
@@ -6,13 +8,15 @@ using System.Text;
 namespace RealtimeChat.Application.Repositories.Interfaces
 {
     public interface IRepositoryAsync<TEntity>
-        where TEntity : class
+        where TEntity : BaseEntity
     {
-        IQueryable<TEntity> GetAll();
+        Task<List<TEntity>> GetAllAsync();
 
-        IQueryable<TEntity> QueryCondition(Expression<Func<TEntity, bool>> predicate);
+        Task<TEntity?> GetByIdAsync(string id);
 
-        Task<TEntity?> FindByIdAsync(string id);
+        Task<List<TEntity>> QueryConditionAsync(Expression<Func<TEntity, bool>> predicate);
+
+        Task<List<TEntity>> FindAsync(FilterDefinition<TEntity> filter);
 
         Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate);
 

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
 using RealtimeChat.Application.DTOs.Users;
 using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Domain.Entities;
@@ -28,10 +27,59 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetUserById(string id)
+    [HttpGet("{id_user}")]
+    public async Task<IActionResult> GetUserById(string id_user)
     {
-        var user = await _userService.GetUserByIdAsync(id);
+        var user = await _userService.GetUserByIdAsync(id_user);
+
+        if (user == null)
+        {
+            return NotFound(new
+            {
+                message = "User not found"
+            });
+        }
+
+        return Ok(user);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetUsers()
+    {
+        var users = await _userService.GetAllUserAsync();
+
+        return Ok(users);
+    }
+
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchUsers(
+    [FromQuery] string keyword)
+    {
+        var users = await _userService.SearchUserAsync(keyword);
+
+        return Ok(users);
+    }
+
+    [HttpDelete("{id_user}")]
+    public async Task<IActionResult> DeleteUser(string id_user)
+    {
+        var result = await _userService.DeleteUserAsync(id_user);
+
+        if (!result)
+        {
+            return NotFound(new
+            {
+                message = "User not found"
+            });
+        }
+
+        return NoContent();
+    }
+
+    [HttpPut("{id_user}")]
+    public async Task<IActionResult> UpdateUser(string id_user, [FromBody] UpdateUserRequest request)
+    {
+        var user = await _userService.UpdateUserAsync(id_user, request);
 
         if (user == null)
         {

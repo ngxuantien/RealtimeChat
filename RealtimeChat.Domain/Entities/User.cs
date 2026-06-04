@@ -31,4 +31,10 @@ public class User : BaseEntity
 
     [BsonElement("lastSeenAt")]
     public DateTime? LastSeenAt { get; set; }
+
+    [BsonElement("refreshToken")]
+    public string? RefreshToken { get; set; }
+
+    [BsonElement("refreshTokenExpiresAt")]
+    public DateTime? RefreshTokenExpiresAt { get; set; }
 }

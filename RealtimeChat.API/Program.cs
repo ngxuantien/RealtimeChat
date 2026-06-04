@@ -18,7 +18,6 @@ builder.Services.AddSwaggerGen(option =>
         Version = "v1"
     });
 });
-builder.Services.AddOpenApi();
 
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDbSettings"));
@@ -53,7 +52,6 @@ if (app.Environment.IsDevelopment())
     {
         option.SwaggerEndpoint("/swagger/v1/swagger.json", "Realtime Chat API v1");
     });
-    app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
