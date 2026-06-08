@@ -1,12 +1,21 @@
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using Serilog;
 using RealtimeChat.Application.Repositories.Interfaces;
 using RealtimeChat.Application.Service;
 using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Infrastructure.Mongo;
 using RealtimeChat.Infrastructure.Repositories;
+using RealtimeChat.API.Middlewares;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -55,6 +64,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseSerilogRequestLogging();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapControllers();
 
