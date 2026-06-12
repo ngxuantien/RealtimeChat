@@ -9,7 +9,7 @@ public class Conversation : BaseEntity
 {
     [BsonElement("type")]
     [BsonRepresentation(BsonType.String)]
-    public ConversationType Type { get; set; } = ConversationType.Private;
+    public ConversationType Type { get; set; }
 
     [BsonElement("name")]
     public string? Name { get; set; }
