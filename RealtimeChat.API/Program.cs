@@ -41,6 +41,9 @@ builder.Services.AddSingleton<MongoDbContext>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<IConversationMemberService, ConversationMemberService>();
 
 builder.Services.AddScoped<MongoDbIndexInitializer>();
 
