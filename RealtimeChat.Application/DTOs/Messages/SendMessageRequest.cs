@@ -5,6 +5,8 @@ namespace RealtimeChat.Application.DTOs.Messages;
 
 public class SendMessageRequest
 {
+    public string ConversationId { get; set; } = string.Empty;
+
     public string SenderId { get; set; } = string.Empty;
 
     public MessageType Type { get; set; } = MessageType.Text;
