@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using RealtimeChat.API.Hubs;
 using RealtimeChat.Application.DTOs.Messages;
 using RealtimeChat.Application.Service.Interfaces;
+using RealtimeChat.Domain.Entities;
 
 namespace RealtimeChat.API.Controllers;
 
@@ -9,10 +12,12 @@ namespace RealtimeChat.API.Controllers;
 public class MessagesController : ControllerBase
 {
     private readonly IMessageService _messageService;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public MessagesController(IMessageService messageService)
+    public MessagesController(IMessageService messageService, IHubContext<ChatHub> hubContext)
     {
         _messageService = messageService;
+        _hubContext = hubContext;
     }
 
     [HttpPost]
@@ -26,6 +31,12 @@ public class MessagesController : ControllerBase
                 result = "Cannot send message",
             });
         }
+
+        await _hubContext
+            .Clients
+            .Group(result.ConversationId)
+            .SendAsync("ReceiveMessage", result);
+
 
         return Ok(result);
     }
@@ -48,6 +59,11 @@ public class MessagesController : ControllerBase
                 message = "Cannot edit message",
             });
         }
+
+        await _hubContext
+            .Clients
+            .Group(result.ConversationId)
+            .SendAsync("MessageEdited", result);
 
         return Ok(result);
     }
