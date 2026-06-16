@@ -30,7 +30,7 @@ public class UserService : IUserService
 
         if (existedUser != null)
         {
-            throw new Exception("Email already exists");
+            return null;
         }
 
         var user = new User

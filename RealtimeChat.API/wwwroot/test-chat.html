@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR Test</title>
+</head>
+<body>
+
+    <h2>Realtime Chat Test</h2>
+
+    <div>
+        Conversation Id:
+        <input id="conversationId"
+               value="6a3106f0c31372611a37dd90" />
+    </div>
+
+    <br />
+
+    <button id="joinBtn" onclick="joinRoom()" disabled>
+        Join Conversation
+    </button>
+
+    <hr />
+
+    <h3>Messages</h3>
+
+    <ul id="messages"></ul>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+    <script>
+
+        const connection =
+            new signalR.HubConnectionBuilder()
+                .withUrl("https://localhost:7134/chatHub")
+                .withAutomaticReconnect()
+                .build();
+
+        connection.on("ReceiveMessage", function (message) {
+            console.log("ReceiveMessage:", message);
+
+            const li = document.createElement("li");
+            li.innerText = `${message.senderId}: ${message.content}`;
+
+            document.getElementById("messages").appendChild(li);
+        });
+
+        async function startConnection() {
+            try {
+                await connection.start();
+
+                console.log("SignalR Connected");
+
+                document.getElementById("joinBtn").disabled = false;
+            }
+            catch (err) {
+                console.error("SignalR connect failed:", err);
+
+                setTimeout(startConnection, 3000);
+            }
+        }
+
+        async function joinRoom() {
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                console.log("Connection not ready:", connection.state);
+                return;
+            }
+
+            const conversationId =
+                document.getElementById("conversationId").value;
+
+            await connection.invoke("JoinConversation", conversationId);
+
+            console.log("Joined conversation:", conversationId);
+        }
+
+        startConnection();
+
+    </script>
+
+</body>
+</html>

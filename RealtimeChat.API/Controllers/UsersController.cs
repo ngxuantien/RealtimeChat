@@ -19,12 +19,19 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateUser(
-        [FromBody] CreateUserRequest request)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
         var user = await _userService.CreateUserAsync(request);
 
-        return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
+        if (user == null)
+        {
+            return BadRequest(new
+            {
+                message = "Email already exists"
+            });
+        }
+
+        return Ok(user);
     }
 
     [HttpGet("{id_user}")]

@@ -18,19 +18,83 @@ public class MessageService : IMessageService
         _unitOfWork = unitOfWork;
     }
 
-    public Task<bool> DeleteMessageAsync(string messageId, string userId)
+    public async Task<bool> DeleteMessageAsync(string messageId, string userId)
     {
-        throw new NotImplementedException();
+        var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
+        var message = await messageRepo.GetByIdAsync(messageId);
+
+        if (message == null)
+        {
+            return false;
+        }
+
+        if(message.SenderId != userId)
+        {
+            return false;
+        }
+
+        if(message.IsDeleted)
+        {
+            return true;
+        }
+
+        message.IsDeleted = true;
+        message.UpdatedAt = DateTime.UtcNow;
+        message.DeletedBy = userId;
+
+        await messageRepo.UpdateAsync(messageId, message);
+
+        return true;
     }
 
-    public Task<Message?> EditMessageAsync(string messageId, string userId, EditMessageRequest request)
+    public async Task<Message?> EditMessageAsync(string messageId, string userId, EditMessageRequest request)
     {
-        throw new NotImplementedException();
+        var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
+
+        var message = await messageRepo.GetByIdAsync(messageId);
+        if(message == null)
+        {
+            return null;
+        }
+
+        if(message.SenderId != userId)
+        {
+            return null;
+        }
+
+        if (message.IsDeleted)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Content))
+            return null;
+
+        message.Content = request.Content;
+        message.UpdatedAt = DateTime.UtcNow;
+        message.EditedAt = DateTime.UtcNow;
+
+        await messageRepo.UpdateAsync(messageId, message);
+
+        return message;
     }
 
-    public Task<List<Message>> GetMessagesAsync(string conversationId, int page, int pageSize)
+    public async Task<List<Message>> GetMessagesAsync(string conversationId, int page, int pageSize)
     {
-        throw new NotImplementedException();
+        var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
+
+        page = page <= 0 ? 1 : page;
+        pageSize = pageSize <= 0 ? 20 : pageSize;
+        pageSize = pageSize > 100 ? 100 : pageSize;
+
+        var message = await messageRepo.QueryConditionAsync(x =>
+            x.ConversationId == conversationId &&
+            !x.IsDeleted);
+
+        return message.OrderByDescending(x => x.CreatedAt)
+            .Skip((page -1) * pageSize)
+            .Take(pageSize)
+            .ToList();
     }
 
     public async Task<Message?> SendMessageAsync(SendMessageRequest request)
@@ -39,7 +103,7 @@ public class MessageService : IMessageService
         var memberRepo = _unitOfWork.GetRepositoryAsync<ConversationMember>();
         var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
 
-        var conversation = conversationRepo.GetByIdAsync(request.ConversationId);
+        var conversation = await conversationRepo.GetByIdAsync(request.ConversationId);
 
         if(conversation == null)
         {
@@ -77,6 +141,12 @@ public class MessageService : IMessageService
         };
 
         await messageRepo.AddAsync(message);
+
+        conversation.LastMessageId = message.Id;
+        conversation.LastMessageAt = message.CreatedAt;
+        conversation.UpdatedAt = DateTime.UtcNow;
+
+        await conversationRepo.UpdateAsync(conversation.Id, conversation);
 
         return message;
     }

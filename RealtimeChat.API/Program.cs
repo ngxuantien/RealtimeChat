@@ -7,6 +7,7 @@ using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Infrastructure.Mongo;
 using RealtimeChat.Infrastructure.Repositories;
 using RealtimeChat.API.Middlewares;
+using RealtimeChat.API.Hubs;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -17,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog();
 
+builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(option =>
@@ -44,6 +46,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IConversationMemberService, ConversationMemberService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
 
 builder.Services.AddScoped<MongoDbIndexInitializer>();
 
@@ -65,6 +68,10 @@ if (app.Environment.IsDevelopment())
         option.SwaggerEndpoint("/swagger/v1/swagger.json", "Realtime Chat API v1");
     });
 }
+
+app.UseStaticFiles();
+app.UseCors("ClientPolicy");
+app.MapHub<ChatHub>("/chatHub");
 
 app.UseHttpsRedirection();
 
