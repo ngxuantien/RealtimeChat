@@ -30,6 +30,17 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDbSettings"));
 
@@ -71,7 +82,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseCors("ClientPolicy");
-app.MapHub<ChatHub>("/chatHub");
+app.UseCors("AllowAngularApp");
+app.MapHub<ChatHub>("/chatHub").RequireCors("AllowAngularApp");
 
 app.UseHttpsRedirection();
 
