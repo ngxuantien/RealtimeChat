@@ -46,7 +46,7 @@ public class AuthService : IAuthService
     {
         var repository = _unitOfWork.GetRepositoryAsync<User>();
 
-        var user = await repository.FirstOrDefaultAsync(x => x.Email == request.Email);
+        var user = await repository.FirstOrDefaultAsync(x => x.PhoneNumber == request.PhoneNumber);
 
         if (user == null)
         {

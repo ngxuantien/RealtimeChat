@@ -11,6 +11,8 @@ public interface IUserService
 
     Task<User?> GetUserByIdAsync(string id);
 
+    Task<User?> GetUserByPhoneAsync(string phoneNumber);
+
     Task<List<User>> SearchUserAsync(string keyword);
 
     Task<bool> DeleteUserAsync(string id_user);

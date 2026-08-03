@@ -13,6 +13,9 @@ public class User : BaseEntity
     [BsonElement("email")]
     public string Email { get; set; } = string.Empty;
 
+    [BsonElement("phoneNumber")]
+    public string PhoneNumber { get; set; } = string.Empty;
+
     [BsonElement("passwordHash")]
     public string PasswordHash { get; set; } = string.Empty;
 

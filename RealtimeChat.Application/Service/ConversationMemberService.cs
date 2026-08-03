@@ -147,5 +147,37 @@ namespace RealtimeChat.Application.Service
 
             return true;
         }
+
+        public async Task<List<ConversationMemberResponse>> GetMembersAsync(string conversationId)
+        {
+            var memberRepo = _unitOfWork.GetRepositoryAsync<ConversationMember>();
+            var userRepo = _unitOfWork.GetRepositoryAsync<User>();
+
+            var members = await memberRepo.QueryConditionAsync(x =>
+                x.ConversationId == conversationId &&
+                x.LeftAt == null);
+
+            var result = new List<ConversationMemberResponse>();
+
+            foreach (var member in members)
+            {
+                var user = await userRepo.GetByIdAsync(member.UserId);
+
+                if (user == null)
+                    continue;
+
+                result.Add(new ConversationMemberResponse
+                {
+                    UserId = user.Id,
+                    DisplayName = user.DisplayName,
+                    AvatarUrl = user.AvatarUrl,
+                    IsOnline = user.IsOnline,
+                    Role = member.Role.ToString(),
+                    IsPinned = member.IsPinned
+                });
+            }
+
+            return result;
+        }
     }
 }

@@ -16,9 +16,7 @@ public class ConversationMembersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddMember(
-        string conversationId,
-        AddConversationMemberRequest request)
+    public async Task<IActionResult> AddMember(string conversationId, AddConversationMemberRequest request)
     {
         var result = await _memberService.AddMemberAsync(conversationId, request);
 
@@ -40,10 +38,7 @@ public class ConversationMembersController : ControllerBase
     }
 
     [HttpPatch("{userId}/role")]
-    public async Task<IActionResult> UpdateRole(
-        string conversationId,
-        string userId,
-        UpdateConversationMemberRoleRequest request)
+    public async Task<IActionResult> UpdateRole(string conversationId, string userId, UpdateConversationMemberRoleRequest request)
     {
         var result = await _memberService.UpdateRoleAsync(conversationId, userId, request);
 
@@ -54,10 +49,7 @@ public class ConversationMembersController : ControllerBase
     }
 
     [HttpPatch("{userId}/read")]
-    public async Task<IActionResult> MarkAsRead(
-        string conversationId,
-        string userId,
-        MarkConversationReadRequest request)
+    public async Task<IActionResult> MarkAsRead(string conversationId, string userId, MarkConversationReadRequest request)
     {
         var result = await _memberService.MarkAsReadAsync(conversationId, userId, request);
 
@@ -68,12 +60,17 @@ public class ConversationMembersController : ControllerBase
     }
 
     [HttpGet("{userId}/unread-count")]
-    public async Task<IActionResult> CountUnreadMessages(
-        string conversationId,
-        string userId)
+    public async Task<IActionResult> CountUnreadMessages(string conversationId, string userId)
     {
         var count = await _memberService.CountUnreadMessagesAsync(conversationId, userId);
 
         return Ok(new { unreadCount = count });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetMembers(string conversationId)
+    {
+        var members = await _memberService.GetMembersAsync(conversationId);
+        return Ok(members);
     }
 }
