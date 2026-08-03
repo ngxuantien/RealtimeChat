@@ -29,7 +29,14 @@ public class MongoDbIndexInitializer
             Builders<User>.IndexKeys.Ascending(x => x.Email),
             new CreateIndexOptions { Unique = true });
 
-        await users.Indexes.CreateOneAsync(emailIndex);
+        var phoneIndex = new CreateIndexModel<User>(
+            Builders<User>.IndexKeys.Ascending(x => x.PhoneNumber),
+            new CreateIndexOptions { Unique = true });
+
+        await users.Indexes.CreateManyAsync([
+            emailIndex,
+            phoneIndex
+        ]);
     }
 
     private async Task CreateConversationIndexesAsync()

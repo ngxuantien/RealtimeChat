@@ -26,7 +26,7 @@ public class UserService : IUserService
     {
         var userRepo = _unitOfWork.GetRepositoryAsync<User>();
 
-        var existedUser = await userRepo.FirstOrDefaultAsync(x => x.Email == createUserRequest.Email);
+        var existedUser = await userRepo.FirstOrDefaultAsync(x => x.Email == createUserRequest.Email || x.PhoneNumber == createUserRequest.PhoneNumber);
 
         if (existedUser != null)
         {
@@ -37,6 +37,7 @@ public class UserService : IUserService
         {
             DisplayName = createUserRequest.DisplayName,
             Email = createUserRequest.Email,
+            PhoneNumber = createUserRequest.PhoneNumber,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserRequest.Password)
         };
 
@@ -48,6 +49,7 @@ public class UserService : IUserService
                 Id = user.Id,
                 DisplayName = user.DisplayName,
                 Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
                 AvatarUrl = user.AvatarUrl,
                 Bio = user.Bio,
                 IsOnline = user.IsOnline
@@ -57,8 +59,15 @@ public class UserService : IUserService
             when (ex.WriteError?.Category ==
                   ServerErrorCategory.DuplicateKey)
         {
-            throw new Exception("Email already exists");
+            throw new Exception("Email or PhoneNumber already exists");
         }
+    }
+
+    public async Task<User?> GetUserByPhoneAsync(string phoneNumber)
+    {
+        var userRepo = _unitOfWork.GetRepositoryAsync<User>();
+
+        return await userRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
     }
 
     public Task<List<User>> GetAllUserAsync()
