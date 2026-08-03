@@ -50,6 +50,22 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
+    [HttpGet("phone/{phoneNumber}")]
+    public async Task<IActionResult> GetUserByPhone(string phoneNumber)
+    {
+        var user = await _userService.GetUserByPhoneAsync(phoneNumber);
+
+        if (user == null)
+        {
+            return NotFound(new
+            {
+                message = "Không tìm thấy người dùng với số điện thoại này"
+            });
+        }
+
+        return Ok(user);
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetUsers()
     {

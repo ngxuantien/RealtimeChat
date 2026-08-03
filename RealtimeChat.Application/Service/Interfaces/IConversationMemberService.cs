@@ -16,5 +16,7 @@ namespace RealtimeChat.Application.Service.Interfaces
         Task<int> CountUnreadMessagesAsync(string conversationId, string userId);
 
         Task<bool> MarkAsReadAsync(string conversationId, string userId, MarkConversationReadRequest request);
+
+        Task<List<ConversationMemberResponse>> GetMembersAsync(string conversationId);
     }
 }
