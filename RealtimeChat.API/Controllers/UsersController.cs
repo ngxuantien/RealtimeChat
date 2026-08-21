@@ -1,33 +1,52 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using RealtimeChat.Application.DTOs.Users;
 using RealtimeChat.Application.Service.Interfaces;
-using RealtimeChat.Domain.Entities;
-using RealtimeChat.Domain.Enums;
-using RealtimeChat.Infrastructure.Mongo;
 
 namespace RealtimeChat.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/users")]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, IFileStorageService fileStorageService)
     {
         _userService = userService;
+        _fileStorageService = fileStorageService;
     }
 
+    [AllowAnonymous]
     [HttpPost]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(6_000_000)]
+    public async Task<IActionResult> CreateUser([FromForm] CreateUserRequest request, [FromForm] IFormFile avatar)
     {
+        if (avatar is null || avatar.Length == 0)
+        {
+            return BadRequest(new { message = "Vui lòng chọn ảnh đại diện" });
+        }
+
+        try
+        {
+            await using var stream = avatar.OpenReadStream();
+            request.AvatarUrl = await _fileStorageService.SaveAvatarAsync(stream, avatar.ContentType, avatar.Length);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
         var user = await _userService.CreateUserAsync(request);
 
         if (user == null)
         {
             return BadRequest(new
             {
-                message = "Email already exists"
+                message = "Email hoặc số điện thoại đã tồn tại"
             });
         }
 
