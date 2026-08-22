@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using RealtimeChat.API.Hubs;
 using RealtimeChat.Application.DTOs.Messages;
@@ -7,6 +8,7 @@ using RealtimeChat.Domain.Entities;
 
 namespace RealtimeChat.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/messages")]
 public class MessagesController : ControllerBase

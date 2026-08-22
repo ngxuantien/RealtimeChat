@@ -1,13 +1,7 @@
-using Microsoft.Extensions.Options;
-using MongoDB.Driver;
-using Serilog;
-using RealtimeChat.Application.Repositories.Interfaces;
-using RealtimeChat.Application.Service;
-using RealtimeChat.Application.Service.Interfaces;
-using RealtimeChat.Infrastructure.Mongo;
-using RealtimeChat.Infrastructure.Repositories;
-using RealtimeChat.API.Middlewares;
+using RealtimeChat.API.Extentions;
 using RealtimeChat.API.Hubs;
+using RealtimeChat.API.Middlewares;
+using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -20,77 +14,30 @@ builder.Host.UseSerilog();
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(option =>
-{
-    option.SwaggerDoc("v1", new()
-    {
-        Title = "Realtime Chat API",
-        Version = "v1"
-    });
-});
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAngularApp", policy =>
-    {
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
-});
-
-builder.Services.Configure<MongoDbSettings>(
-    builder.Configuration.GetSection("MongoDbSettings"));
-
-builder.Services.AddSingleton<IMongoClient>(sp =>
-{
-    var settings = sp.GetRequiredService<IOptions<MongoDbSettings>>().Value;
-    return new MongoClient(settings.ConnectionString);
-});
-
-builder.Services.AddSingleton<MongoDbContext>();
-
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IConversationService, ConversationService>();
-builder.Services.AddScoped<IConversationMemberService, ConversationMemberService>();
-builder.Services.AddScoped<IMessageService, MessageService>();
-
-builder.Services.AddScoped<MongoDbIndexInitializer>();
+builder.Services.AddSwaggerDocumentation();
+builder.Services.AddCorsPolicy();
+builder.Services.AddMongoDb(builder.Configuration);
+builder.Services.AddApplicationServices();
+builder.Services.AddAuthentication(builder.Configuration);
+builder.Services.AddFileStorage(builder.Configuration);
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var indexInitializer = scope.ServiceProvider
-        .GetRequiredService<MongoDbIndexInitializer>();
+await app.InitializeMongoIndexesAsync();
 
-    await indexInitializer.CreateIndexesAsync();
-}
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(option =>
-    {
-        option.SwaggerEndpoint("/swagger/v1/swagger.json", "Realtime Chat API v1");
-    });
-}
-
-app.UseStaticFiles();
-app.UseCors("ClientPolicy");
-app.UseCors("AllowAngularApp");
-app.MapHub<ChatHub>("/chatHub").RequireCors("AllowAngularApp");
+app.UseSwaggerDocumentation();
 
 app.UseHttpsRedirection();
 
-app.UseSerilogRequestLogging();
+app.UseCors(CorsServiceExtensions.AngularAppPolicy);
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/chatHub").RequireCors(CorsServiceExtensions.AngularAppPolicy);
 
 app.Run();

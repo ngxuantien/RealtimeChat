@@ -16,6 +16,7 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -29,6 +30,7 @@ public class AuthController : ControllerBase
         return Ok(authResponse);
     }
 
+    [Authorize]
     [HttpPost("logout/{userId}")]
     public async Task<IActionResult> Logout(string userId)
     {
@@ -48,6 +50,7 @@ public class AuthController : ControllerBase
         });
     }
 
+    [AllowAnonymous]
     [HttpPost("refresh-token")]
     public async Task<IActionResult> RefreshToken(
         RefreshTokenRequest request)
@@ -65,6 +68,7 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize]
     [HttpPut("{userId}/change-password")]
     public async Task<IActionResult> ChangePassword(
         string userId,
