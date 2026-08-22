@@ -1,6 +1,7 @@
 ﻿using RealtimeChat.Application.DTOs.Messages;
 using RealtimeChat.Application.Repositories.Interfaces;
 using RealtimeChat.Application.Service.Interfaces;
+using RealtimeChat.Application.Utils;
 using RealtimeChat.Domain.Entities;
 using RealtimeChat.Domain.Enums;
 using System;
@@ -143,23 +144,12 @@ public class MessageService : IMessageService
         await messageRepo.AddAsync(message);
 
         conversation.LastMessageId = message.Id;
-        conversation.LastMessagePreview = BuildLastMessagePreview(message);
+        conversation.LastMessagePreview = MessagePreviewHelper.Build(message);
         conversation.LastMessageAt = message.CreatedAt;
         conversation.UpdatedAt = DateTime.UtcNow;
 
         await conversationRepo.UpdateAsync(conversation.Id, conversation);
 
         return message;
-    }
-
-    private static string BuildLastMessagePreview(Message message)
-    {
-        return message.Type switch
-        {
-            MessageType.Image => "[Hình ảnh]",
-            MessageType.Video => "[Video]",
-            MessageType.File => "[Tệp đính kèm]",
-            _ => message.Content.Length > 120 ? message.Content[..120] : message.Content,
-        };
     }
 }

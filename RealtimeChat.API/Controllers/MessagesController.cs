@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using RealtimeChat.API.Hubs;
 using RealtimeChat.Application.DTOs.Messages;
 using RealtimeChat.Application.Service.Interfaces;
+using RealtimeChat.Application.Utils;
 using RealtimeChat.Domain.Entities;
 
 namespace RealtimeChat.API.Controllers;
@@ -14,11 +15,13 @@ namespace RealtimeChat.API.Controllers;
 public class MessagesController : ControllerBase
 {
     private readonly IMessageService _messageService;
+    private readonly IConversationMemberService _memberService;
     private readonly IHubContext<ChatHub> _hubContext;
 
-    public MessagesController(IMessageService messageService, IHubContext<ChatHub> hubContext)
+    public MessagesController(IMessageService messageService, IConversationMemberService memberService, IHubContext<ChatHub> hubContext)
     {
         _messageService = messageService;
+        _memberService = memberService;
         _hubContext = hubContext;
     }
 
@@ -39,6 +42,15 @@ public class MessagesController : ControllerBase
             .Group(result.ConversationId)
             .SendAsync("ReceiveMessage", result);
 
+        var members = await _memberService.GetMembersAsync(result.ConversationId);
+        var memberGroups = members.Select(m => $"user-{m.UserId}").ToList();
+
+        await _hubContext.Clients.Groups(memberGroups).SendAsync("ConversationUpdated", new
+        {
+            conversationId = result.ConversationId,
+            lastMessagePreview = MessagePreviewHelper.Build(result),
+            lastMessageAt = result.CreatedAt,
+        });
 
         return Ok(result);
     }
