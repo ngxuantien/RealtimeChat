@@ -38,7 +38,8 @@ public class UserService : IUserService
             DisplayName = createUserRequest.DisplayName,
             Email = createUserRequest.Email,
             PhoneNumber = createUserRequest.PhoneNumber,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserRequest.Password)
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(createUserRequest.Password),
+            AvatarUrl = createUserRequest.AvatarUrl
         };
 
         try

@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using RealtimeChat.Application.DTOs.Conversations;
 using RealtimeChat.Application.Service.Interfaces;
 
 namespace RealtimeChat.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/conversations")]
 public class ConversationsController : ControllerBase

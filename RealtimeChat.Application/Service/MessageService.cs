@@ -1,6 +1,7 @@
 ﻿using RealtimeChat.Application.DTOs.Messages;
 using RealtimeChat.Application.Repositories.Interfaces;
 using RealtimeChat.Application.Service.Interfaces;
+using RealtimeChat.Application.Utils;
 using RealtimeChat.Domain.Entities;
 using RealtimeChat.Domain.Enums;
 using System;
@@ -143,6 +144,7 @@ public class MessageService : IMessageService
         await messageRepo.AddAsync(message);
 
         conversation.LastMessageId = message.Id;
+        conversation.LastMessagePreview = MessagePreviewHelper.Build(message);
         conversation.LastMessageAt = message.CreatedAt;
         conversation.UpdatedAt = DateTime.UtcNow;
 
