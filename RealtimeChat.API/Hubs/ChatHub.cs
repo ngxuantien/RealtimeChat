@@ -1,9 +1,20 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using RealtimeChat.Application.Repositories.Interfaces;
+using RealtimeChat.Domain.Entities;
 
 namespace RealtimeChat.API.Hubs;
 
+[Authorize]
 public class ChatHub : Hub
 {
+    private readonly IUnitOfWork _unitOfWork;
+
+    public ChatHub(IUnitOfWork unitOfWork)
+    {
+        _unitOfWork = unitOfWork;
+    }
+
     public async Task JoinConversation(string conversationId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, conversationId);
@@ -59,15 +70,74 @@ public class ChatHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        await Clients.All.SendAsync("UserConnected", Context.ConnectionId);
+        var userId = Context.UserIdentifier;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"user-{userId}");
+
+            var connectionRepo = _unitOfWork.GetRepositoryAsync<UserConnection>();
+
+            await connectionRepo.AddAsync(new UserConnection
+            {
+                UserId = userId,
+                ConnectionId = Context.ConnectionId,
+            });
+
+            var activeConnections = await connectionRepo.QueryConditionAsync(
+                x => x.UserId == userId && x.DisconnectedAt == null);
+
+            if (activeConnections.Count == 1)
+            {
+                await SetUserOnlineAsync(userId, true);
+            }
+        }
 
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        await Clients.All.SendAsync("UserDisconnected", Context.ConnectionId);
+        var userId = Context.UserIdentifier;
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            var connectionRepo = _unitOfWork.GetRepositoryAsync<UserConnection>();
+
+            var connection = await connectionRepo.FirstOrDefaultAsync(x => x.ConnectionId == Context.ConnectionId);
+            if (connection != null)
+            {
+                connection.DisconnectedAt = DateTime.UtcNow;
+                await connectionRepo.UpdateAsync(connection.Id, connection);
+            }
+
+            var activeConnections = await connectionRepo.QueryConditionAsync(
+                x => x.UserId == userId && x.DisconnectedAt == null);
+
+            if (activeConnections.Count == 0)
+            {
+                await SetUserOnlineAsync(userId, false);
+            }
+        }
 
         await base.OnDisconnectedAsync(exception);
+    }
+
+    private async Task SetUserOnlineAsync(string userId, bool isOnline)
+    {
+        var userRepo = _unitOfWork.GetRepositoryAsync<User>();
+        var user = await userRepo.GetByIdAsync(userId);
+
+        if (user == null) return;
+
+        user.IsOnline = isOnline;
+        user.LastSeenAt = DateTime.UtcNow;
+        await userRepo.UpdateAsync(userId, user);
+
+        await Clients.All.SendAsync("UserOnlineStatusChanged", new
+        {
+            userId,
+            isOnline,
+            lastSeenAt = user.LastSeenAt,
+        });
     }
 }
