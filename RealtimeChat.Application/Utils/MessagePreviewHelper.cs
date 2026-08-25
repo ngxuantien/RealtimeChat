@@ -14,6 +14,7 @@ public static class MessagePreviewHelper
         {
             MessageType.Image => "[Hình ảnh]",
             MessageType.Video => "[Video]",
+            MessageType.Voice => "[Tin nhắn thoại]",
             MessageType.File => "[Tệp đính kèm]",
             _ => message.Content.Length > 120 ? message.Content[..120] : message.Content,
         };

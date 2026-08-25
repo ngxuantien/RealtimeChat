@@ -2,6 +2,7 @@
 using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Options;
 using RealtimeChat.Application.Service.Interfaces;
+using RealtimeChat.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -16,6 +17,7 @@ public class CloudinaryFileStorageService : IFileStorageService
     };
 
     private const long MaxFileSizeBytes = 4 * 1024 * 1024;
+    private const long MaxAttachmentSizeBytes = 10 * 1024 * 1024;
 
     private readonly Cloudinary _cloudinary;
 
@@ -47,5 +49,50 @@ public class CloudinaryFileStorageService : IFileStorageService
             throw new InvalidOperationException($"Upload ảnh thất bại: {result.Error.Message}");
 
         return result.SecureUrl.ToString();
+    }
+
+    public async Task<MessageAttachment> SaveMessageAttachmentAsync(Stream content, string contentType, string fileName, long length, CancellationToken ct = default)
+    {
+        if (length is <= 0 or > MaxAttachmentSizeBytes)
+            throw new InvalidOperationException("File không được vượt quá 10mb");
+
+        var publicId = Guid.NewGuid().ToString("N");
+        UploadResult result;
+
+        if (contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            result = await _cloudinary.UploadAsync(new ImageUploadParams
+            {
+                File = new FileDescription(publicId, content),
+                Folder = "realtime-chat/attachments/images",
+            }, ct);
+        }
+        else if(contentType.StartsWith("audio/", StringComparison.OrdinalIgnoreCase))
+        {
+            result = await _cloudinary.UploadAsync(new VideoUploadParams
+            {
+                File = new FileDescription(publicId, content),
+                Folder = "realtime-chat/attachments/voice",
+            }, ct);
+        }
+        else
+        {
+            result = await _cloudinary.UploadAsync(new RawUploadParams
+            {
+                File = new FileDescription(publicId, content),
+                Folder = "realtime-chat/attachments/files",
+            });
+        }
+
+        if (result.Error != null)
+            throw new InvalidOperationException($"Upload tệp thất bại: {result.Error.Message}");
+
+        return new MessageAttachment
+        {
+            FileName = fileName,
+            FileUrl = result.SecureUrl.ToString(),
+            FileType = contentType,
+            FileSize = length,
+        };
     }
 }

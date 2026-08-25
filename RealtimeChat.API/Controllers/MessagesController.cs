@@ -16,12 +16,14 @@ public class MessagesController : ControllerBase
 {
     private readonly IMessageService _messageService;
     private readonly IConversationMemberService _memberService;
+    private readonly IFileStorageService _fileStorageService;
     private readonly IHubContext<ChatHub> _hubContext;
 
-    public MessagesController(IMessageService messageService, IConversationMemberService memberService, IHubContext<ChatHub> hubContext)
+    public MessagesController(IMessageService messageService, IConversationMemberService memberService, IFileStorageService fileStorageService, IHubContext<ChatHub> hubContext)
     {
         _messageService = messageService;
         _memberService = memberService;
+        _fileStorageService = fileStorageService;
         _hubContext = hubContext;
     }
 
@@ -98,5 +100,28 @@ public class MessagesController : ControllerBase
         {
             message = "Message deleted successfully"
         });
+    }
+
+    [HttpPost("attachments")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(11_000_000)]
+    public async Task<IActionResult> UploadAttachment([FromForm] IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Vui lòng chọn tệp" });
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var attachment = await _fileStorageService.SaveMessageAttachmentAsync(stream, file.ContentType, file.FileName, file.Length);
+
+            return Ok(attachment);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }
