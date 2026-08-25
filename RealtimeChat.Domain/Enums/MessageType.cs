@@ -6,5 +6,6 @@ public enum MessageType
     Image = 2,
     Video = 3,
     File = 4,
-    System = 5
+    System = 5,
+    Voice = 6,
 }
