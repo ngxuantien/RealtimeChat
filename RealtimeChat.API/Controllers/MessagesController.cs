@@ -88,7 +88,7 @@ public class MessagesController : ControllerBase
     public async Task<IActionResult> DeleteMessage(string messageId, string userId)
     {
         var result = await _messageService.DeleteMessageAsync(messageId, userId);
-        if (!result)
+        if (result == null)
         {
             return BadRequest(new
             {
@@ -96,10 +96,13 @@ public class MessagesController : ControllerBase
             });
         }
 
-        return Ok(new
+        await _hubContext.Clients.Group(result.ConversationId).SendAsync("MessageDeleted", new
         {
-            message = "Message deleted successfully"
+            messageId = result.Id,
+            conversationId = result.ConversationId,
         });
+
+        return Ok(new { message = "Message deleted successfully" });
     }
 
     [HttpPost("attachments")]
