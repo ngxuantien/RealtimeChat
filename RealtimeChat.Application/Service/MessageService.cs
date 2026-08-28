@@ -19,25 +19,14 @@ public class MessageService : IMessageService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<bool> DeleteMessageAsync(string messageId, string userId)
+    public async Task<Message?> DeleteMessageAsync(string messageId, string userId)
     {
         var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
         var message = await messageRepo.GetByIdAsync(messageId);
 
-        if (message == null)
-        {
-            return false;
-        }
-
-        if(message.SenderId != userId)
-        {
-            return false;
-        }
-
-        if(message.IsDeleted)
-        {
-            return true;
-        }
+        if (message == null) return null;
+        if (message.SenderId != userId) return null;
+        if (message.IsDeleted) return null;
 
         message.IsDeleted = true;
         message.UpdatedAt = DateTime.UtcNow;
@@ -45,7 +34,7 @@ public class MessageService : IMessageService
 
         await messageRepo.UpdateAsync(messageId, message);
 
-        return true;
+        return message;
     }
 
     public async Task<Message?> EditMessageAsync(string messageId, string userId, EditMessageRequest request)

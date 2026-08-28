@@ -14,5 +14,5 @@ public interface IMessageService
 
     Task<Message?> EditMessageAsync(string messageId, string userId, EditMessageRequest request);
 
-    Task<bool> DeleteMessageAsync(string messageId, string userId);
+    Task<Message?> DeleteMessageAsync(string messageId, string userId);
 }

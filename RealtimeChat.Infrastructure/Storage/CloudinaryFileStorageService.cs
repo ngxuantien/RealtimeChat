@@ -56,7 +56,8 @@ public class CloudinaryFileStorageService : IFileStorageService
         if (length is <= 0 or > MaxAttachmentSizeBytes)
             throw new InvalidOperationException("File không được vượt quá 10mb");
 
-        var publicId = Guid.NewGuid().ToString("N");
+        var extention = Path.GetExtension(fileName);
+        var publicId = $"{Guid.NewGuid():N}{extention}";
         UploadResult result;
 
         if (contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
@@ -64,6 +65,7 @@ public class CloudinaryFileStorageService : IFileStorageService
             result = await _cloudinary.UploadAsync(new ImageUploadParams
             {
                 File = new FileDescription(publicId, content),
+                PublicId = publicId,
                 Folder = "realtime-chat/attachments/images",
             }, ct);
         }
@@ -72,6 +74,7 @@ public class CloudinaryFileStorageService : IFileStorageService
             result = await _cloudinary.UploadAsync(new VideoUploadParams
             {
                 File = new FileDescription(publicId, content),
+                PublicId = publicId,
                 Folder = "realtime-chat/attachments/voice",
             }, ct);
         }
@@ -80,6 +83,7 @@ public class CloudinaryFileStorageService : IFileStorageService
             result = await _cloudinary.UploadAsync(new RawUploadParams
             {
                 File = new FileDescription(publicId, content),
+                PublicId = publicId,
                 Folder = "realtime-chat/attachments/files",
             });
         }
