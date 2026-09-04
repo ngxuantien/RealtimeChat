@@ -9,20 +9,20 @@ using RealtimeChat.Domain.Entities;
 
 namespace RealtimeChat.API.Controllers;
 
-[Authorize]
-[ApiController]
 [Route("api/messages")]
-public class MessagesController : ControllerBase
+public class MessagesController : BaseApiController
 {
     private readonly IMessageService _messageService;
     private readonly IConversationMemberService _memberService;
+    private readonly IConversationService _conversationService;
     private readonly IFileStorageService _fileStorageService;
     private readonly IHubContext<ChatHub> _hubContext;
 
-    public MessagesController(IMessageService messageService, IConversationMemberService memberService, IFileStorageService fileStorageService, IHubContext<ChatHub> hubContext)
+    public MessagesController(IMessageService messageService, IConversationMemberService memberService, IConversationService conversationService, IFileStorageService fileStorageService, IHubContext<ChatHub> hubContext)
     {
         _messageService = messageService;
         _memberService = memberService;
+        _conversationService = conversationService;
         _fileStorageService = fileStorageService;
         _hubContext = hubContext;
     }
@@ -30,7 +30,10 @@ public class MessagesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> SendMessage(SendMessageRequest request)
     {
+        if (request.SenderId != CurrentUserId) return Forbid();
+
         var result = await _messageService.SendMessageAsync(request);
+
         if(result == null)
         {
             return BadRequest(new
@@ -39,10 +42,7 @@ public class MessagesController : ControllerBase
             });
         }
 
-        await _hubContext
-            .Clients
-            .Group(result.ConversationId)
-            .SendAsync("ReceiveMessage", result);
+        await _hubContext.Clients.Group(result.ConversationId).SendAsync("ReceiveMessage", result);
 
         var members = await _memberService.GetMembersAsync(result.ConversationId);
         var memberGroups = members.Select(m => $"user-{m.UserId}").ToList();
@@ -67,6 +67,8 @@ public class MessagesController : ControllerBase
     [HttpPut("{messageId}/user/{userId}")]
     public async Task<IActionResult> UpdateMessage(string messageId, string userId, [FromBody] EditMessageRequest request)
     {
+        if(userId != CurrentUserId) return Forbid();
+
         var result = await _messageService.EditMessageAsync(messageId, userId, request);
         if (result == null)
         {
@@ -76,10 +78,21 @@ public class MessagesController : ControllerBase
             });
         }
 
-        await _hubContext
-            .Clients
-            .Group(result.ConversationId)
-            .SendAsync("MessageEdited", result);
+        await _hubContext.Clients.Group(result.ConversationId).SendAsync("MessageEdited", result);
+
+        var conversation = await _conversationService.GetConversationByIdAsync(result.ConversationId);
+        if (conversation != null && conversation.LastMessageId == result.Id)
+        {
+            var members = await _memberService.GetMembersAsync(result.ConversationId);
+            var memberGroups = members.Select(m => $"user-{m.UserId}").ToList();
+
+            await _hubContext.Clients.Groups(memberGroups).SendAsync("ConversationUpdated", new
+            {
+                conversationId = result.ConversationId,
+                lastMessagePreview = MessagePreviewHelper.Build(result),
+                lastMessageAt = conversation.LastMessageAt,
+            });
+        }
 
         return Ok(result);
     }
@@ -87,6 +100,8 @@ public class MessagesController : ControllerBase
     [HttpDelete("{messageId}/user/{userId}")]
     public async Task<IActionResult> DeleteMessage(string messageId, string userId)
     {
+        if (userId != CurrentUserId) return Forbid();
+
         var result = await _messageService.DeleteMessageAsync(messageId, userId);
         if (result == null)
         {
@@ -101,6 +116,20 @@ public class MessagesController : ControllerBase
             messageId = result.Id,
             conversationId = result.ConversationId,
         });
+
+        var conversation = await _conversationService.GetConversationByIdAsync(result.ConversationId);
+        if (conversation != null)
+        {
+            var members = await _memberService.GetMembersAsync(result.ConversationId);
+            var memberGroups = members.Select(m => $"user-{m.UserId}").ToList();
+
+            await _hubContext.Clients.Groups(memberGroups).SendAsync("ConversationUpdated", new
+            {
+                conversationId = result.ConversationId,
+                lastMessagePreview = conversation.LastMessagePreview ?? "Chưa có tin nhắn",
+                lastMessageAt = conversation.LastMessageAt,
+            });
+        }
 
         return Ok(new { message = "Message deleted successfully" });
     }
@@ -126,5 +155,12 @@ public class MessagesController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    [HttpGet("conversation/{conversationId}/attachments")]
+    public async Task<IActionResult> GetAttachments(string conversationId)
+    {
+        var result = await _messageService.GetAttachmentsAsync(conversationId);
+        return Ok(result);
     }
 }

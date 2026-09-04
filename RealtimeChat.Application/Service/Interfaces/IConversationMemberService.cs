@@ -18,5 +18,7 @@ namespace RealtimeChat.Application.Service.Interfaces
         Task<bool> MarkAsReadAsync(string conversationId, string userId, MarkConversationReadRequest request);
 
         Task<List<ConversationMemberResponse>> GetMembersAsync(string conversationId);
+
+        Task<bool> UpdateMuteAsync(string conversationId, string userId, bool isMuted);
     }
 }

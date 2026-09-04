@@ -5,9 +5,8 @@ using RealtimeChat.Application.Service.Interfaces;
 
 namespace RealtimeChat.API.Controllers;
 
-[ApiController]
 [Route("api/auth")]
-public class AuthController : ControllerBase
+public class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;
 
@@ -30,10 +29,11 @@ public class AuthController : ControllerBase
         return Ok(authResponse);
     }
 
-    [Authorize]
     [HttpPost("logout/{userId}")]
     public async Task<IActionResult> Logout(string userId)
     {
+        if (userId != CurrentUserId) return Forbid();
+
         var result = await _authService.LogoutAsync(userId);
 
         if (!result)
@@ -52,8 +52,7 @@ public class AuthController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("refresh-token")]
-    public async Task<IActionResult> RefreshToken(
-        RefreshTokenRequest request)
+    public async Task<IActionResult> RefreshToken(RefreshTokenRequest request)
     {
         var result = await _authService.RefreshTokenAsync(request);
 
@@ -68,27 +67,18 @@ public class AuthController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize]
     [HttpPut("{userId}/change-password")]
-    public async Task<IActionResult> ChangePassword(
-        string userId,
-        ChangePasswordRequest request)
+    public async Task<IActionResult> ChangePassword(string userId, ChangePasswordRequest request)
     {
-        var result = await _authService.ChangePasswordAsync(
-            userId,
-            request);
+        if (userId != CurrentUserId) return Forbid();
+
+        var result = await _authService.ChangePasswordAsync(userId, request);
 
         if (!result)
         {
-            return BadRequest(new
-            {
-                message = "Invalid user or password"
-            });
+            return BadRequest(new { message = "Invalid user or password" });
         }
 
-        return Ok(new
-        {
-            message = "Password changed successfully"
-        });
+        return Ok(new { message = "Password changed successfully" });
     }
 }
