@@ -34,37 +34,51 @@ public class MessageService : IMessageService
 
         await messageRepo.UpdateAsync(messageId, message);
 
+        var conversationRepo = _unitOfWork.GetRepositoryAsync<Conversation>();
+        var conversation = await conversationRepo.GetByIdAsync(message.ConversationId);
+
+        if(conversation != null && conversation.LastMessageId == message.Id)
+        {
+            var remaining = await messageRepo.QueryConditionAsync(x =>
+            x.ConversationId == message.ConversationId && !x.IsDeleted);
+
+            var newLast = remaining.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+
+            conversation.LastMessageId = newLast?.Id;
+            conversation.LastMessagePreview = newLast != null ? MessagePreviewHelper.Build(newLast) : null;
+            conversation.LastMessageAt = newLast?.CreatedAt;
+            conversation.UpdatedAt = DateTime.UtcNow;
+
+            await conversationRepo.UpdateAsync(conversation.Id, conversation);
+        }
+
         return message;
     }
 
     public async Task<Message?> EditMessageAsync(string messageId, string userId, EditMessageRequest request)
     {
         var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
-
+        var conversationRepo = _unitOfWork.GetRepositoryAsync<Conversation>();
         var message = await messageRepo.GetByIdAsync(messageId);
-        if(message == null)
-        {
-            return null;
-        }
 
-        if(message.SenderId != userId)
-        {
-            return null;
-        }
-
-        if (message.IsDeleted)
-        {
-            return null;
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Content))
-            return null;
+        if(message == null) return null;
+        if(message.SenderId != userId) return null;
+        if (message.IsDeleted) return null;
+        if (string.IsNullOrWhiteSpace(request.Content)) return null;
 
         message.Content = request.Content;
         message.UpdatedAt = DateTime.UtcNow;
         message.EditedAt = DateTime.UtcNow;
 
         await messageRepo.UpdateAsync(messageId, message);
+
+        var conversation = await conversationRepo.GetByIdAsync(message.ConversationId);
+        if(conversation != null && conversation.LastMessageId == message.Id)
+        {
+            conversation.LastMessagePreview = MessagePreviewHelper.Build(message);
+            conversation.UpdatedAt = DateTime.UtcNow;
+            await conversationRepo.UpdateAsync(conversation.Id, conversation);
+        }
 
         return message;
     }
@@ -140,5 +154,17 @@ public class MessageService : IMessageService
         await conversationRepo.UpdateAsync(conversation.Id, conversation);
 
         return message;
+    }
+
+    public async Task<List<Message>> GetAttachmentsAsync(string conversationId)
+    {
+        var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
+
+        var message = await messageRepo.QueryConditionAsync(x =>
+            x.ConversationId == conversationId &&
+            !x.IsDeleted &&
+            x.Attachments.Count > 0);
+
+        return message.OrderByDescending(x => x.CreatedAt).ToList();
     }
 }

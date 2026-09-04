@@ -15,4 +15,6 @@ public interface IMessageService
     Task<Message?> EditMessageAsync(string messageId, string userId, EditMessageRequest request);
 
     Task<Message?> DeleteMessageAsync(string messageId, string userId);
+
+    Task<List<Message>> GetAttachmentsAsync(string conversationId);
 }

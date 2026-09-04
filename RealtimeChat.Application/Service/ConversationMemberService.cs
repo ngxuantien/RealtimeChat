@@ -173,11 +173,28 @@ namespace RealtimeChat.Application.Service
                     AvatarUrl = user.AvatarUrl,
                     IsOnline = user.IsOnline,
                     Role = member.Role.ToString(),
-                    IsPinned = member.IsPinned
+                    IsPinned = member.IsPinned,
+                    IsMuted = member.IsMuted,
                 });
             }
 
             return result;
+        }
+
+        public async Task<bool> UpdateMuteAsync(string conversationId, string userId, bool isMuted)
+        {
+            var memberRepo = _unitOfWork.GetRepositoryAsync<ConversationMember>();
+            var member = await memberRepo.FirstOrDefaultAsync(x =>
+                x.ConversationId == conversationId &&
+                x.UserId == userId &&
+                x.LeftAt == null);
+
+            if (member == null) return false;
+
+            member.IsMuted = isMuted;
+            await memberRepo.UpdateAsync(member.Id, member);
+
+            return true;
         }
     }
 }
