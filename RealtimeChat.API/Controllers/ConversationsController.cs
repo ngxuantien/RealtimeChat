@@ -5,10 +5,8 @@ using RealtimeChat.Application.Service.Interfaces;
 
 namespace RealtimeChat.API.Controllers;
 
-[Authorize]
-[ApiController]
 [Route("api/conversations")]
-public class ConversationsController : ControllerBase
+public class ConversationsController : BaseApiController
 {
     private readonly IConversationService _conversationService;
     public ConversationsController(IConversationService conversationService)
@@ -19,6 +17,8 @@ public class ConversationsController : ControllerBase
     [HttpPost("private")]
     public async Task<IActionResult> CreatePrivateConversation(CreatePrivateConversationRequest request)
     {
+        if (request.CurrentUserId != CurrentUserId) return Forbid();
+
         var conversation = await _conversationService.CreatePrivateConversationAsync(request);
         return Ok(conversation);
     }
@@ -26,6 +26,8 @@ public class ConversationsController : ControllerBase
     [HttpPost("group")]
     public async Task<IActionResult> CreateGroupConversation(CreateGroupConversationRequest request)
     {
+        if(request.CreatedByUserId != CurrentUserId) return Forbid();
+
         var conversation = await _conversationService.CreateGroupConversationAsync(request);
         return Ok(conversation);
     }
@@ -33,6 +35,7 @@ public class ConversationsController : ControllerBase
     [HttpGet("user/{userId}")]
     public async Task<IActionResult> GetUserConversations(string userId)
     {
+        if(userId != CurrentUserId) return Forbid();
         var conversations = await _conversationService.GetUserConversationAsync(userId);
 
         return Ok(conversations);
@@ -66,6 +69,8 @@ public class ConversationsController : ControllerBase
     [HttpPost("{conversationId}/leave/{userId}")]
     public async Task<IActionResult> LeaveConversation(string conversationId, string userId)
     {
+        if(userId != CurrentUserId) return Forbid();
+
         var result = await _conversationService.LeaveConversationAsync(conversationId, userId);
 
         if (!result)
@@ -83,6 +88,8 @@ public class ConversationsController : ControllerBase
     [HttpDelete("{conversationId}/user/{userId}")]
     public async Task<IActionResult> DeleteConversationForUser(string conversationId, string userId)
     {
+        if(userId != CurrentUserId) return Forbid();
+
         var result = await _conversationService.DeleteConversationAsync(conversationId, userId);
 
         if (!result)

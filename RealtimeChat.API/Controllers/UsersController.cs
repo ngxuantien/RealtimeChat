@@ -5,10 +5,8 @@ using RealtimeChat.Application.Service.Interfaces;
 
 namespace RealtimeChat.API.Controllers;
 
-[Authorize]
-[ApiController]
 [Route("api/users")]
-public class UsersController : ControllerBase
+public class UsersController : BaseApiController
 {
     private readonly IUserService _userService;
     private readonly IFileStorageService _fileStorageService;
@@ -105,6 +103,7 @@ public class UsersController : ControllerBase
     [HttpDelete("{id_user}")]
     public async Task<IActionResult> DeleteUser(string id_user)
     {
+        if (id_user != CurrentUserId) return Forbid();
         var result = await _userService.DeleteUserAsync(id_user);
 
         if (!result)
@@ -121,6 +120,8 @@ public class UsersController : ControllerBase
     [HttpPut("{id_user}")]
     public async Task<IActionResult> UpdateUser(string id_user, [FromBody] UpdateUserRequest request)
     {
+        if (id_user != CurrentUserId) return Forbid();
+
         var user = await _userService.UpdateUserAsync(id_user, request);
 
         if (user == null)

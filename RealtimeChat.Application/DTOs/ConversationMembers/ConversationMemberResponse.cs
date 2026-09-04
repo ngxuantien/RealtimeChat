@@ -17,4 +17,6 @@ public class ConversationMemberResponse
     public string Role { get; set; } = string.Empty;
 
     public bool IsPinned { get; set; }
+
+    public bool IsMuted { get; set; }
 }

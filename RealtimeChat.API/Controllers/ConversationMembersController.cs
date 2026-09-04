@@ -5,10 +5,8 @@ using RealtimeChat.Application.Service.Interfaces;
 
 namespace RealtimeChat.API.Controllers;
 
-[Authorize]
-[ApiController]
 [Route("api/conversations/{conversationId}/members")]
-public class ConversationMembersController : ControllerBase
+public class ConversationMembersController : BaseApiController
 {
     private readonly IConversationMemberService _memberService;
 
@@ -53,6 +51,8 @@ public class ConversationMembersController : ControllerBase
     [HttpPatch("{userId}/read")]
     public async Task<IActionResult> MarkAsRead(string conversationId, string userId, MarkConversationReadRequest request)
     {
+        if (userId != CurrentUserId) return Forbid();
+
         var result = await _memberService.MarkAsReadAsync(conversationId, userId, request);
 
         if (!result)
@@ -64,6 +64,7 @@ public class ConversationMembersController : ControllerBase
     [HttpGet("{userId}/unread-count")]
     public async Task<IActionResult> CountUnreadMessages(string conversationId, string userId)
     {
+        if (userId != CurrentUserId) return Forbid();
         var count = await _memberService.CountUnreadMessagesAsync(conversationId, userId);
 
         return Ok(new { unreadCount = count });
@@ -74,5 +75,14 @@ public class ConversationMembersController : ControllerBase
     {
         var members = await _memberService.GetMembersAsync(conversationId);
         return Ok(members);
+    }
+
+    [HttpPatch("mute")]
+    public async Task<IActionResult> UpdateMute(string conversationId, [FromBody] UpdateMuteRequest request)
+    {
+        var result = await _memberService.UpdateMuteAsync(conversationId, CurrentUserId, request.IsMuted);
+        if (!result) return NotFound(new { message = "Member not found" });
+
+        return Ok(new { message = "Cập nhật thông báo thành công" });
     }
 }
