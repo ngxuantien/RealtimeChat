@@ -1,4 +1,5 @@
 ﻿using RealtimeChat.Application.DTOs.Conversations;
+using RealtimeChat.Application.Repositories.Interfaces;
 using RealtimeChat.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -21,4 +22,6 @@ public interface IConversationService
     Task<bool> LeaveConversationAsync(string conversationId, string userId);
 
     Task<bool> DeleteConversationAsync(string conversationId, string userId);
+
+    Task<bool> DeleteGroupAsync(string conversationId);
 }

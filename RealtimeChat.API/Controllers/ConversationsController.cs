@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RealtimeChat.Application.DTOs.Conversations;
 using RealtimeChat.Application.Service.Interfaces;
+using RealtimeChat.Domain.Enums;
 
 namespace RealtimeChat.API.Controllers;
 
@@ -96,5 +97,27 @@ public class ConversationsController : BaseApiController
             return NotFound(new { message = "Conversation member not found" });
 
         return Ok(new { message = "Conversation deleted for user successfully" });
+    }
+
+    [HttpDelete("{conversationId}/group")]
+    public async Task<IActionResult> DeleteGroup(string conversationId)
+    {
+        var conversation = await _conversationService.GetConversationByIdAsync(conversationId);
+        if(conversation == null)
+        {
+            return NotFound(new { message = "Conversation not found" });
+        }
+
+        if(conversation.Type != ConversationType.Group)
+        {
+            return BadRequest(new { message = "Only group conversations can be deleted" });
+        }
+
+        if (conversation.CreatedBy != CurrentUserId) return Forbid();
+
+        var result = await _conversationService.DeleteGroupAsync(conversationId);
+        if(!result) return BadRequest(new { message = "Failed to delete group conversation" });
+
+        return Ok(new {message = "Group conversation deleted successfully" });
     }
 }
