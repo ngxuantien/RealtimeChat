@@ -145,6 +145,22 @@ namespace RealtimeChat.Application.Service
             member.LeftAt = DateTime.UtcNow;
             member.UpdatedAt = DateTime.UtcNow;
 
+            await memberRepo.UpdateAsync(member.Id, member);
+
+            return true;
+        }
+
+        public async Task<bool> DeleteGroupAsync(string conversationId)
+        {
+            var conversationRepo = _unitOfWork.GetRepositoryAsync<Conversation>();
+            var conversation = await conversationRepo.GetByIdAsync(conversationId);
+
+            if (conversation == null || conversation.Type != ConversationType.Group) return false;
+
+            conversation.DeletedAt = DateTime.UtcNow;
+            conversation.UpdatedAt = DateTime.UtcNow;
+            await conversationRepo.UpdateAsync(conversation.Id, conversation);
+
             return true;
         }
 
