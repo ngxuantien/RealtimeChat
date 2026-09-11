@@ -175,6 +175,7 @@ namespace RealtimeChat.Application.Service
                     Role = member.Role.ToString(),
                     IsPinned = member.IsPinned,
                     IsMuted = member.IsMuted,
+                    LastReadMessageId = member.LastReadMessageId
                 });
             }
 
