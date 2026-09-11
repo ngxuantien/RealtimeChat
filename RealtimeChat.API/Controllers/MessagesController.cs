@@ -52,6 +52,7 @@ public class MessagesController : BaseApiController
             conversationId = result.ConversationId,
             lastMessagePreview = MessagePreviewHelper.Build(result),
             lastMessageAt = result.CreatedAt,
+            senderId = result.SenderId,
         });
 
         return Ok(result);

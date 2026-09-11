@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using RealtimeChat.API.Hubs;
 using RealtimeChat.Application.DTOs.ConversationMembers;
 using RealtimeChat.Application.Service.Interfaces;
 
@@ -10,11 +12,13 @@ public class ConversationMembersController : BaseApiController
 {
     private readonly IConversationMemberService _memberService;
     private readonly IConversationService _conversationService;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public ConversationMembersController(IConversationMemberService memberService, IConversationService conversationService)
+    public ConversationMembersController(IConversationMemberService memberService, IConversationService conversationService, IHubContext<ChatHub> hubContext)
     {
         _memberService = memberService;
         _conversationService = conversationService;
+        _hubContext = hubContext;
     }
 
     [HttpPatch("{userId}/role")]
@@ -37,6 +41,13 @@ public class ConversationMembersController : BaseApiController
 
         if (!result)
             return NotFound(new { message = "Member not found" });
+
+        await _hubContext.Clients.Group(conversationId).SendAsync("MessageRead", new
+        {
+            conversationId,
+            userId,
+            lastReadMessageId = request.MessageId,
+        });
 
         return Ok(new { message = "Conversation marked as read" });
     }
