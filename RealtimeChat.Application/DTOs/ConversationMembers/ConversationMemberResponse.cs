@@ -19,4 +19,6 @@ public class ConversationMemberResponse
     public bool IsPinned { get; set; }
 
     public bool IsMuted { get; set; }
+
+    public string? LastReadMessageId { get; set; }
 }
