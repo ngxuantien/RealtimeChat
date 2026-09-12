@@ -122,15 +122,46 @@ public class UsersController : BaseApiController
     {
         if (id_user != CurrentUserId) return Forbid();
 
-        var user = await _userService.UpdateUserAsync(id_user, request);
+        try
+        {
+            var user = await _userService.UpdateUserAsync(id_user, request);
+
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            return Ok(user);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id_user}/avatar")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(6_000_000)]
+    public async Task<IActionResult> UpdateAvatar(string id_user, [FromForm] IFormFile avatar)
+    {
+        if (id_user != CurrentUserId) return Forbid();
+
+        if (avatar is null || avatar.Length == 0)
+            return BadRequest(new { message = "Vui lòng chọn ảnh đại diện" });
+
+        string avatarUrl;
+        try
+        {
+            await using var stream = avatar.OpenReadStream();
+            avatarUrl = await _fileStorageService.SaveAvatarAsync(stream, avatar.ContentType, avatar.Length);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
+        var user = await _userService.UpdateUserAsync(id_user, new UpdateUserRequest { AvatarUrl = avatarUrl });
 
         if (user == null)
-        {
-            return NotFound(new
-            {
-                message = "User not found"
-            });
-        }
+            return NotFound(new { message = "User not found" });
 
         return Ok(user);
     }

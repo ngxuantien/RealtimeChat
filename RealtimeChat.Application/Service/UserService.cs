@@ -128,6 +128,12 @@ public class UserService : IUserService
         if (!string.IsNullOrWhiteSpace(request.DisplayName))
             user.DisplayName = request.DisplayName;
 
+        if (!string.IsNullOrWhiteSpace(request.Email))
+            user.Email = request.Email;
+
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+            user.PhoneNumber = request.PhoneNumber;
+
         if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
             user.AvatarUrl = request.AvatarUrl;
 
