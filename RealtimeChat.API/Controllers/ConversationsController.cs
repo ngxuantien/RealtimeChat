@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using RealtimeChat.API.Hubs;
 using RealtimeChat.Application.DTOs.Conversations;
+using RealtimeChat.Application.Service;
 using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Domain.Enums;
 
@@ -10,9 +13,15 @@ namespace RealtimeChat.API.Controllers;
 public class ConversationsController : BaseApiController
 {
     private readonly IConversationService _conversationService;
-    public ConversationsController(IConversationService conversationService)
+    private readonly IConversationMemberService _memberService;
+    private readonly IFileStorageService _fileStorageService;
+    private readonly IHubContext<ChatHub> _hubContext;
+    public ConversationsController(IConversationMemberService memberService, IConversationService conversationService, IFileStorageService fileStorageService, IHubContext<ChatHub> hubContext)
     {
+        _memberService = memberService;
         _conversationService = conversationService;
+        _fileStorageService = fileStorageService;
+        _hubContext = hubContext;
     }
 
     [HttpPost("private")]
@@ -56,13 +65,17 @@ public class ConversationsController : BaseApiController
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateConversation(string id, UpdateConversationRequest request)
     {
+        var existing = await _conversationService.GetConversationByIdAsync(id);
+
+        if (existing == null) return NotFound(new { message = "Conversation not found" });
+
+        var members = await _memberService.GetMembersAsync(id);
+        if (!members.Any(m => m.UserId == CurrentUserId)) return Forbid();
+
         var conversation = await _conversationService.UpdateConversationAsync(id, request);
 
         if (conversation == null)
-            return NotFound(new 
-            { 
-                message = "Conversation not found or not group conversation" 
-            });
+            return NotFound(new { message = "Conversation not found or not group conversation" });
 
         return Ok(conversation);
     }
@@ -119,5 +132,45 @@ public class ConversationsController : BaseApiController
         if(!result) return BadRequest(new { message = "Failed to delete group conversation" });
 
         return Ok(new {message = "Group conversation deleted successfully" });
+    }
+
+    [HttpPost("{id}/avatar")]
+    [Consumes("multipart/form-data")]
+    [RequestSizeLimit(6_000_000)]
+    public async Task<IActionResult> UpdateGroupAvatar(string id, [FromForm] IFormFile avatar)
+    {
+        var conversation = await _conversationService.GetConversationByIdAsync(id);
+        if (conversation == null) return NotFound(new { message = "Conversation not found" });
+        if (conversation.Type != ConversationType.Group)
+            return BadRequest(new { message = "Chỉ nhóm mới có thể đổi ảnh đại diện" });
+
+        var members = await _memberService.GetMembersAsync(id);
+        if (!members.Any(m => m.UserId == CurrentUserId)) return Forbid();
+
+        if (avatar is null || avatar.Length == 0)
+            return BadRequest(new { message = "Vui lòng chọn ảnh đại diện" });
+
+        string avatarUrl;
+        try
+        {
+            await using var stream = avatar.OpenReadStream();
+            avatarUrl = await _fileStorageService.SaveAvatarAsync(stream, avatar.ContentType, avatar.Length);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+
+        var updated = await _conversationService.UpdateConversationAsync(id, new UpdateConversationRequest { AvatarUrl = avatarUrl });
+
+        var memberGroups = members.Select(m => $"user-{m.UserId}").ToList();
+        await _hubContext.Clients.Groups(memberGroups).SendAsync("ConversationInfoUpdated", new
+        {
+            conversationId = id,
+            name = updated!.Name,
+            avatarUrl = updated.AvatarUrl,
+        });
+
+        return Ok(updated);
     }
 }
