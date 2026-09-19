@@ -81,4 +81,24 @@ public class AuthController : BaseApiController
 
         return Ok(new { message = "Password changed successfully" });
     }
+
+    [AllowAnonymous]
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+    {
+        await _authService.ForgotPasswordAsync(request);
+        return Ok(new { message = "Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu." });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        var result = await _authService.ResetPasswordAsync(request);
+
+        if (!result)
+            return BadRequest(new { message = "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn." });
+
+        return Ok(new { message = "Đặt lại mật khẩu thành công." });
+    }
 }

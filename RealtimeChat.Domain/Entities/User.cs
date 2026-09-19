@@ -40,4 +40,10 @@ public class User : BaseEntity
 
     [BsonElement("refreshTokenExpiresAt")]
     public DateTime? RefreshTokenExpiresAt { get; set; }
+
+    [BsonElement("passwordResetToken")]
+    public string? PasswordResetToken { get; set; }
+
+    [BsonElement("passwordResetTokenExpiresAt")]
+    public DateTime? PasswordResetTokenExpiresAt { get; set; }
 }

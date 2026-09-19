@@ -20,6 +20,7 @@ builder.Services.AddMongoDb(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddAuthentication(builder.Configuration);
 builder.Services.AddFileStorage(builder.Configuration);
+builder.Services.AddEmailSender(builder.Configuration);
 
 var app = builder.Build();
 

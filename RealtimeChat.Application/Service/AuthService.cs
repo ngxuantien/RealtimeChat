@@ -15,11 +15,13 @@ public class AuthService : IAuthService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
+    private readonly IEmailSender _emailSender;
 
-    public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration)
+    public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration, IEmailSender emailSender)
     {
         _unitOfWork = unitOfWork;
         _configuration = configuration;
+        _emailSender = emailSender;
     }
 
     public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
@@ -128,6 +130,56 @@ public class AuthService : IAuthService
             AccessToken = GenerateAccessToken(user),
             RefreshToken = user.RefreshToken
         };
+    }
+
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request)
+    {
+        var repository = _unitOfWork.GetRepositoryAsync<User>();
+
+        var user = await repository.FirstOrDefaultAsync(x => x.Email == request.Email);
+
+        // Luôn trả về true dù không tìm thấy, tránh lộ email nào đã đăng ký
+        if (user == null) return true;
+
+        user.PasswordResetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
+        user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(30);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await repository.UpdateAsync(user.Id, user);
+
+        var frontendBaseUrl = _configuration["App:FrontendBaseUrl"];
+        var resetLink = $"{frontendBaseUrl}/auth/reset-password?token={user.PasswordResetToken}";
+
+        var html = $"<p>Xin chào {user.DisplayName},</p>" +
+                   $"<p>Nhấn vào liên kết bên dưới để đặt lại mật khẩu. Liên kết có hiệu lực trong 30 phút:</p>" +
+                   $"<p><a href=\"{resetLink}\">{resetLink}</a></p>" +
+                   $"<p>Nếu bạn không yêu cầu đổi mật khẩu, hãy bỏ qua email này.</p>";
+
+        await _emailSender.SendAsync(user.Email, "Đặt lại mật khẩu ChatFlow", html);
+
+        return true;
+    }
+
+    public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        var repository = _unitOfWork.GetRepositoryAsync<User>();
+
+        var user = await repository.FirstOrDefaultAsync(x => x.PasswordResetToken == request.Token);
+
+        if (user == null) return false;
+        if (user.PasswordResetTokenExpiresAt == null || user.PasswordResetTokenExpiresAt < DateTime.UtcNow)
+            return false;
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiresAt = null;
+        user.RefreshToken = null;
+        user.RefreshTokenExpiresAt = null;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await repository.UpdateAsync(user.Id, user);
+
+        return true;
     }
 
     private string GenerateAccessToken(User user)

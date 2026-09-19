@@ -142,7 +142,15 @@ public class UserService : IUserService
 
         user.UpdatedAt = DateTime.UtcNow;
 
-        await repository.UpdateAsync(id_user, user);
+        try
+        {
+            await repository.UpdateAsync(id_user, user);
+        }
+        catch (MongoWriteException ex)
+            when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            throw new Exception("Email hoặc số điện thoại đã được sử dụng");
+        }
 
         return user;
     }
