@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# App secrets - never commit real config, use appsettings.Example.json as a template
+RealtimeChat.API/appsettings.json
+RealtimeChat.API/appsettings.*.json
+!RealtimeChat.API/appsettings.Example.json

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using RealtimeChat.Application.DTOs.Auths;
 using RealtimeChat.Application.Service.Interfaces;
 
@@ -16,6 +17,7 @@ public class AuthController : BaseApiController
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -67,22 +69,8 @@ public class AuthController : BaseApiController
         return Ok(result);
     }
 
-    [HttpPut("{userId}/change-password")]
-    public async Task<IActionResult> ChangePassword(string userId, ChangePasswordRequest request)
-    {
-        if (userId != CurrentUserId) return Forbid();
-
-        var result = await _authService.ChangePasswordAsync(userId, request);
-
-        if (!result)
-        {
-            return BadRequest(new { message = "Invalid user or password" });
-        }
-
-        return Ok(new { message = "Password changed successfully" });
-    }
-
     [AllowAnonymous]
+    [EnableRateLimiting("forgot-password")]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
     {

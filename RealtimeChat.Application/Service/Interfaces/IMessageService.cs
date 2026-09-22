@@ -17,4 +17,6 @@ public interface IMessageService
     Task<Message?> DeleteMessageAsync(string messageId, string userId);
 
     Task<List<Message>> GetAttachmentsAsync(string conversationId);
+
+    Task<Message?> ToggleReactionAsync(string messageId, string userId, string emoji);
 }
