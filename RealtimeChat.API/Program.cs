@@ -21,6 +21,7 @@ builder.Services.AddApplicationServices();
 builder.Services.AddAuthentication(builder.Configuration);
 builder.Services.AddFileStorage(builder.Configuration);
 builder.Services.AddEmailSender(builder.Configuration);
+builder.Services.AddRateLimitingPolicies();
 
 var app = builder.Build();
 
@@ -37,6 +38,8 @@ app.UseAuthorization();
 
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseRateLimiter();
 
 app.MapControllers();
 app.MapHub<ChatHub>("/chatHub").RequireCors(CorsServiceExtensions.AngularAppPolicy);

@@ -42,4 +42,7 @@ public class Message : BaseEntity
 
     [BsonElement("editedAt")]
     public DateTime? EditedAt { get; set; }
+
+    [BsonElement("reactions")]
+    public List<MessageReaction> Reactions { get; set; } = [];
 }

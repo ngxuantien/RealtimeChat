@@ -9,9 +9,9 @@ public interface IUserService
 
     Task<List<User>> GetAllUserAsync();
 
-    Task<User?> GetUserByIdAsync(string id);
+    Task<UserResponse?> GetUserByIdAsync(string id_user);
 
-    Task<User?> GetUserByPhoneAsync(string phoneNumber);
+    Task<UserResponse?> GetUserByPhoneAsync(string phoneNumber);
 
     Task<List<User>> SearchUserAsync(string keyword);
 

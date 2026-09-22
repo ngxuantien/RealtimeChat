@@ -24,26 +24,6 @@ public class AuthService : IAuthService
         _emailSender = emailSender;
     }
 
-    public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
-    {
-        var repository = _unitOfWork.GetRepositoryAsync<User>();
-
-        var user = await repository.GetByIdAsync(userId);
-
-        if (user == null)
-            return false;
-
-        user.RefreshToken = null;
-        user.RefreshTokenExpiresAt = null;
-        user.IsOnline = false;
-        user.LastSeenAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
-
-        await repository.UpdateAsync(user.Id, user);
-
-        return true;
-    }
-
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
     {
         var repository = _unitOfWork.GetRepositoryAsync<User>();

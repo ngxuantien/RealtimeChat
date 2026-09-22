@@ -12,6 +12,8 @@ namespace RealtimeChat.Application.Service;
 
 public class MessageService : IMessageService
 {
+    private static readonly TimeSpan EditDeleteTimeLimit = TimeSpan.FromDays(1);
+
     private readonly IUnitOfWork _unitOfWork;
 
     public MessageService(IUnitOfWork unitOfWork)
@@ -27,6 +29,7 @@ public class MessageService : IMessageService
         if (message == null) return null;
         if (message.SenderId != userId) return null;
         if (message.IsDeleted) return null;
+        if (DateTime.UtcNow - message.CreatedAt > EditDeleteTimeLimit) return null;
 
         message.IsDeleted = true;
         message.UpdatedAt = DateTime.UtcNow;
@@ -65,6 +68,7 @@ public class MessageService : IMessageService
         if(message.SenderId != userId) return null;
         if (message.IsDeleted) return null;
         if (string.IsNullOrWhiteSpace(request.Content)) return null;
+        if (DateTime.UtcNow - message.CreatedAt > EditDeleteTimeLimit) return null;
 
         message.Content = request.Content;
         message.UpdatedAt = DateTime.UtcNow;
@@ -114,7 +118,7 @@ public class MessageService : IMessageService
             return null;
         }
 
-        var isMember = memberRepo.FirstOrDefaultAsync(x => 
+        var isMember = await memberRepo.FirstOrDefaultAsync(x => 
             x.ConversationId == request.ConversationId && 
             x.UserId == request.SenderId &&
             x.LeftAt == null);
@@ -166,5 +170,35 @@ public class MessageService : IMessageService
             x.Attachments.Count > 0);
 
         return message.OrderByDescending(x => x.CreatedAt).ToList();
+    }
+
+    public async Task<Message?> ToggleReactionAsync(string messageId, string userId, string emoji)
+    {
+        var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
+        var memberRepo = _unitOfWork.GetRepositoryAsync<ConversationMember>();
+
+        var message = await messageRepo.GetByIdAsync(messageId);
+        if(message == null || message.IsDeleted) return null;
+
+        var isMember = await memberRepo.FirstOrDefaultAsync(x =>
+            x.ConversationId == message.ConversationId &&
+            x.UserId == userId &&
+            x.LeftAt == null);
+
+        if (isMember == null) return null;
+
+        var existing = message.Reactions.FirstOrDefault(r => r.UserId == userId && r.Emoji == emoji);
+        if (existing != null)
+        {
+            message.Reactions.Remove(existing);
+        }
+        else
+        {
+            message.Reactions.RemoveAll(r => r.UserId == userId);
+            message.Reactions.Add(new MessageReaction { UserId = userId, Emoji = emoji });
+        }
+
+        await messageRepo.UpdateAsync(messageId, message);
+        return message;
     }
 }

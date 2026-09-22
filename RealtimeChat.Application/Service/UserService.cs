@@ -64,11 +64,11 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<User?> GetUserByPhoneAsync(string phoneNumber)
+    public async Task<UserResponse?> GetUserByPhoneAsync(string phoneNumber)
     {
         var userRepo = _unitOfWork.GetRepositoryAsync<User>();
-
-        return await userRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
+        var user = await userRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
+        return user == null ? null : UserResponse.FromEntity(user);
     }
 
     public Task<List<User>> GetAllUserAsync()
@@ -78,11 +78,11 @@ public class UserService : IUserService
         return result.GetAllAsync();
     }
 
-    public async Task<User?> GetUserByIdAsync(string id_user)
+    public async Task<UserResponse?> GetUserByIdAsync(string id_user)
     {
         var result = _unitOfWork.GetRepositoryAsync<User>();
-
-        return await result.GetByIdAsync(id_user);
+        var user = await result.GetByIdAsync(id_user);
+        return user == null ? null : UserResponse.FromEntity(user);
     }
 
     public async Task<List<User>> SearchUserAsync(string keyword)

@@ -65,10 +65,6 @@ public class ConversationsController : BaseApiController
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateConversation(string id, UpdateConversationRequest request)
     {
-        var existing = await _conversationService.GetConversationByIdAsync(id);
-
-        if (existing == null) return NotFound(new { message = "Conversation not found" });
-
         var members = await _memberService.GetMembersAsync(id);
         if (!members.Any(m => m.UserId == CurrentUserId)) return Forbid();
 

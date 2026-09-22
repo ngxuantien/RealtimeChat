@@ -164,4 +164,20 @@ public class MessagesController : BaseApiController
         var result = await _messageService.GetAttachmentsAsync(conversationId);
         return Ok(result);
     }
+
+    [HttpPost("{messageId}/reactions")]
+    public async Task<IActionResult> ToggleReaction(string messageId, ToggleReactionRequest request)
+    {
+        var result = await _messageService.ToggleReactionAsync(messageId, CurrentUserId, request.Emoji);
+        if (result == null) return BadRequest(new { message = "Không thể cập nhật cảm xúc" });
+
+        await _hubContext.Clients.Group(result.ConversationId).SendAsync("MessageReactionUpdated", new
+        {
+            messageId = result.Id,
+            conversationId = result.ConversationId,
+            reactions = result.Reactions,
+        });
+
+        return Ok(result);
+    }
 }

@@ -13,8 +13,6 @@ namespace RealtimeChat.Application.Service.Interfaces
 
         Task<bool> LogoutAsync(string userId);
 
-        Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request);
-
         Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);
 
         Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
