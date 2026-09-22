@@ -197,5 +197,17 @@ namespace RealtimeChat.Application.Service
 
             return true;
         }
+
+        public async Task<bool> IsMemberWithRoleAsync(string conversationId, string userId, ConversationMemberRole role)
+        {
+            var memberRepo = _unitOfWork.GetRepositoryAsync<ConversationMember>();
+
+            var member = await memberRepo.FirstOrDefaultAsync(x =>
+                x.ConversationId == conversationId &&
+                x.UserId == userId &&
+                x.LeftAt == null);
+
+            return member != null && member.Role == role;
+        }
     }
 }

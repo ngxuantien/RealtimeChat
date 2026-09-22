@@ -67,50 +67,52 @@ public class UserService : IUserService
     public async Task<UserResponse?> GetUserByPhoneAsync(string phoneNumber)
     {
         var userRepo = _unitOfWork.GetRepositoryAsync<User>();
-        var user = await userRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
+        var user = await userRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber && x.DeletedAt == null);
         return user == null ? null : UserResponse.FromEntity(user);
     }
 
-    public Task<List<User>> GetAllUserAsync()
+    public async Task<List<UserResponse>> GetAllUserAsync()
     {
-        var result = _unitOfWork.GetRepositoryAsync<User>();
-
-        return result.GetAllAsync();
+        var userRepo = _unitOfWork.GetRepositoryAsync<User>();
+        var users = await userRepo.GetAllAsync();
+        return users.Where(u => u.DeletedAt == null).Select(UserResponse.FromEntity).ToList();
     }
 
     public async Task<UserResponse?> GetUserByIdAsync(string id_user)
     {
         var result = _unitOfWork.GetRepositoryAsync<User>();
         var user = await result.GetByIdAsync(id_user);
-        return user == null ? null : UserResponse.FromEntity(user);
+        return user == null || user.DeletedAt != null ? null : UserResponse.FromEntity(user);
     }
 
-    public async Task<List<User>> SearchUserAsync(string keyword)
+    public async Task<List<UserResponse>> SearchUserAsync(string keyword)
     {
         var filter = Builders<User>.Filter.Or(
-            Builders<User>.Filter.Regex(
-                x => x.DisplayName,
-                new BsonRegularExpression(keyword, "i")),
-            Builders<User>.Filter.Regex(
-                x => x.Email,
-                new BsonRegularExpression(keyword, "i"))
+            Builders<User>.Filter.Regex(x => x.DisplayName, new BsonRegularExpression(keyword, "i")),
+            Builders<User>.Filter.Regex(x => x.Email, new BsonRegularExpression(keyword, "i"))
         );
 
-        return await _unitOfWork.GetRepositoryAsync<User>().FindAsync(filter);
+        var users = await _unitOfWork.GetRepositoryAsync<User>().FindAsync(filter);
+        return users.Where(u => u.DeletedAt == null).Select(UserResponse.FromEntity).ToList();
     }
 
     public async Task<bool> DeleteUserAsync(string id_user)
     {
         var repository = _unitOfWork.GetRepositoryAsync<User>();
 
-        var user = repository.GetByIdAsync(id_user);
+        var user = await repository.GetByIdAsync(id_user);
 
-        if (user == null)
+        if (user == null || user.DeletedAt != null)
         {
             return false;
         }
 
-        await repository.DeleteAsync(id_user);
+        user.DeletedAt = DateTime.UtcNow;
+        user.RefreshToken = null;
+        user.RefreshTokenExpiresAt = null;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await repository.UpdateAsync(id_user, user);
         return true;
     }
 

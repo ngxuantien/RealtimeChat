@@ -165,6 +165,16 @@ public class MessagesController : BaseApiController
         return Ok(result);
     }
 
+    [HttpGet("conversation/{conversationId}/search")]
+    public async Task<IActionResult> SearchMessages(string conversationId, [FromQuery] string keyword)
+    {
+        var members = await _memberService.GetMembersAsync(conversationId);
+        if (!members.Any(m => m.UserId == CurrentUserId)) return Forbid();
+
+        var result = await _messageService.SearchMessagesAsync(conversationId, keyword);
+        return Ok(result);
+    }
+
     [HttpPost("{messageId}/reactions")]
     public async Task<IActionResult> ToggleReaction(string messageId, ToggleReactionRequest request)
     {
