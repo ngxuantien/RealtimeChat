@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using RealtimeChat.API.Hubs;
 using RealtimeChat.Application.DTOs.ConversationMembers;
 using RealtimeChat.Application.Service.Interfaces;
+using RealtimeChat.Domain.Enums;
 
 namespace RealtimeChat.API.Controllers;
 
@@ -24,6 +25,12 @@ public class ConversationMembersController : BaseApiController
     [HttpPatch("{userId}/role")]
     public async Task<IActionResult> UpdateRole(string conversationId, string userId, UpdateConversationMemberRoleRequest request)
     {
+        var conversation = await _conversationService.GetConversationByIdAsync(conversationId);
+        if (conversation == null) return NotFound(new { message = "Conversation not found" });
+
+        var isAdmin = await _memberService.IsMemberWithRoleAsync(conversationId, CurrentUserId, ConversationMemberRole.Admin);
+        if (conversation.CreatedBy != CurrentUserId && !isAdmin) return Forbid();
+
         var result = await _memberService.UpdateRoleAsync(conversationId, userId, request);
 
         if (!result)
@@ -65,6 +72,7 @@ public class ConversationMembersController : BaseApiController
     public async Task<IActionResult> GetMembers(string conversationId)
     {
         var members = await _memberService.GetMembersAsync(conversationId);
+        if (!members.Any(m => m.UserId == CurrentUserId)) return Forbid();
         return Ok(members);
     }
 
@@ -75,6 +83,15 @@ public class ConversationMembersController : BaseApiController
         if (!result) return NotFound(new { message = "Member not found" });
 
         return Ok(new { message = "Cập nhật thông báo thành công" });
+    }
+
+    [HttpPatch("pin")]
+    public async Task<IActionResult> UpdatePin(string conversationId, [FromBody] UpdatePinRequest request)
+    {
+        var result = await _memberService.UpdatePinAsync(conversationId, CurrentUserId, request.IsPinned);
+        if (!result) return NotFound(new { message = "Member not found" });
+
+        return Ok(new { message = "Cập nhật ghim thành công" });
     }
 
     [HttpPost]
@@ -95,7 +112,8 @@ public class ConversationMembersController : BaseApiController
         var conversation = await _conversationService.GetConversationByIdAsync(conversationId);
         if (conversation == null) return NotFound(new { message = "Conversation not found" });
 
-        if (conversation.CreatedBy != CurrentUserId) return Forbid();
+        var isAdmin = await _memberService.IsMemberWithRoleAsync(conversationId, CurrentUserId, ConversationMemberRole.Admin);
+        if (conversation.CreatedBy != CurrentUserId && !isAdmin) return Forbid();
 
         var result = await _memberService.RemoveMemberAsync(conversationId, userId);
         if (!result) return NotFound(new { message = "Member not found" });

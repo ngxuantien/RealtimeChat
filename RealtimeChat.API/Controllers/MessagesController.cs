@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using RealtimeChat.API.Hubs;
 using RealtimeChat.Application.DTOs.Messages;
@@ -28,6 +29,7 @@ public class MessagesController : BaseApiController
     }
 
     [HttpPost]
+    [EnableRateLimiting("send-message")]
     public async Task<IActionResult> SendMessage(SendMessageRequest request)
     {
         if (request.SenderId != CurrentUserId) return Forbid();
@@ -162,6 +164,16 @@ public class MessagesController : BaseApiController
     public async Task<IActionResult> GetAttachments(string conversationId)
     {
         var result = await _messageService.GetAttachmentsAsync(conversationId);
+        return Ok(result);
+    }
+
+    [HttpGet("conversation/{conversationId}/search")]
+    public async Task<IActionResult> SearchMessages(string conversationId, [FromQuery] string keyword)
+    {
+        var members = await _memberService.GetMembersAsync(conversationId);
+        if (!members.Any(m => m.UserId == CurrentUserId)) return Forbid();
+
+        var result = await _messageService.SearchMessagesAsync(conversationId, keyword);
         return Ok(result);
     }
 

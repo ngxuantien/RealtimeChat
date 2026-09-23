@@ -59,11 +59,28 @@ public class MongoDbIndexInitializer
     {
         var conversationMembers = _context.GetCollection<ConversationMember>();
 
-        var uniqueMemberIndex = new CreateIndexModel<ConversationMember>(
+        // the original index enforced uniqueness across ALL rows, including ones the user
+        // already left (LeftAt set) - so re-joining a conversation/group after leaving hit a
+        // duplicate-key crash. Drop it so it can be recreated as a partial index scoped to
+        // active memberships only, letting a left member rejoin as a fresh row.
+        try
+        {
+            await conversationMembers.Indexes.DropOneAsync("conversationId_1_userId_1");
+        }
+        catch (MongoCommandException)
+        {
+            // index didn't exist yet (fresh database) - nothing to drop
+        }
+
+        var uniqueActiveMemberIndex = new CreateIndexModel<ConversationMember>(
             Builders<ConversationMember>.IndexKeys
                 .Ascending(x => x.ConversationId)
                 .Ascending(x => x.UserId),
-            new CreateIndexOptions { Unique = true });
+            new CreateIndexOptions<ConversationMember>
+            {
+                Unique = true,
+                PartialFilterExpression = Builders<ConversationMember>.Filter.Eq(x => x.LeftAt, null),
+            });
 
         var userIndex = new CreateIndexModel<ConversationMember>(
             Builders<ConversationMember>.IndexKeys.Ascending(x => x.UserId));
@@ -72,7 +89,7 @@ public class MongoDbIndexInitializer
             Builders<ConversationMember>.IndexKeys.Ascending(x => x.ConversationId));
 
         await conversationMembers.Indexes.CreateManyAsync([
-            uniqueMemberIndex,
+            uniqueActiveMemberIndex,
             userIndex,
             conversationIndex
         ]);
