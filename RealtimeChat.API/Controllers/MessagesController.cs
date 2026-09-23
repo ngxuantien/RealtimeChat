@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using RealtimeChat.API.Hubs;
 using RealtimeChat.Application.DTOs.Messages;
@@ -28,6 +29,7 @@ public class MessagesController : BaseApiController
     }
 
     [HttpPost]
+    [EnableRateLimiting("send-message")]
     public async Task<IActionResult> SendMessage(SendMessageRequest request)
     {
         if (request.SenderId != CurrentUserId) return Forbid();

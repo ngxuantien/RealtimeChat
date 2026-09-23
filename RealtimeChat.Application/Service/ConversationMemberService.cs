@@ -198,6 +198,22 @@ namespace RealtimeChat.Application.Service
             return true;
         }
 
+        public async Task<bool> UpdatePinAsync(string conversationId, string userId, bool isPinned)
+        {
+            var memberRepo = _unitOfWork.GetRepositoryAsync<ConversationMember>();
+            var member = await memberRepo.FirstOrDefaultAsync(x =>
+                x.ConversationId == conversationId &&
+                x.UserId == userId &&
+                x.LeftAt == null);
+
+            if (member == null) return false;
+
+            member.IsPinned = isPinned;
+            await memberRepo.UpdateAsync(member.Id, member);
+
+            return true;
+        }
+
         public async Task<bool> IsMemberWithRoleAsync(string conversationId, string userId, ConversationMemberRole role)
         {
             var memberRepo = _unitOfWork.GetRepositoryAsync<ConversationMember>();

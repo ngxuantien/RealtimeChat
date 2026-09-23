@@ -85,6 +85,15 @@ public class ConversationMembersController : BaseApiController
         return Ok(new { message = "Cập nhật thông báo thành công" });
     }
 
+    [HttpPatch("pin")]
+    public async Task<IActionResult> UpdatePin(string conversationId, [FromBody] UpdatePinRequest request)
+    {
+        var result = await _memberService.UpdatePinAsync(conversationId, CurrentUserId, request.IsPinned);
+        if (!result) return NotFound(new { message = "Member not found" });
+
+        return Ok(new { message = "Cập nhật ghim thành công" });
+    }
+
     [HttpPost]
     public async Task<IActionResult> AddMember(string conversationId, AddConversationMemberRequest request)
     {
