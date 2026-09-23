@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using RealtimeChat.API.Extentions;
 using RealtimeChat.API.Hubs;
 using RealtimeChat.API.Middlewares;
@@ -15,7 +16,7 @@ builder.Host.UseSerilog();
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddSwaggerDocumentation();
-builder.Services.AddCorsPolicy();
+builder.Services.AddCorsPolicy(builder.Configuration);
 builder.Services.AddMongoDb(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddAuthentication(builder.Configuration);
@@ -28,6 +29,13 @@ var app = builder.Build();
 await app.InitializeMongoIndexesAsync();
 
 app.UseSwaggerDocumentation();
+
+// Azure App Service terminates TLS at its reverse proxy and forwards plain HTTP internally,
+// so Kestrel needs these headers to know the original request was HTTPS (avoids a redirect loop).
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.UseHttpsRedirection();
 
