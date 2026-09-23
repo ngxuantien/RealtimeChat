@@ -1,0 +1,69 @@
+name: Deploy to MonsterASP.NET
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      - name: Publish API
+        run: dotnet publish RealtimeChat.API/RealtimeChat.API.csproj -c Release -o ./publish --runtime win-x86 --self-contained false
+
+      - name: Write production secrets
+        shell: pwsh
+        run: |
+          $config = @{
+            MongoDbSettings = @{
+              ConnectionString = "${{ secrets.MONGO_CONNECTION_STRING }}"
+              DatabaseName = "realtime_chat_db"
+            }
+            Jwt = @{
+              Key = "${{ secrets.JWT_KEY }}"
+              Issuer = "RealtimeChat"
+              Audience = "RealtimeChatClient"
+            }
+            Cloudinary = @{
+              CloudName = "${{ secrets.CLOUDINARY_CLOUD_NAME }}"
+              ApiKey = "${{ secrets.CLOUDINARY_API_KEY }}"
+              ApiSecret = "${{ secrets.CLOUDINARY_API_SECRET }}"
+            }
+            Smtp = @{
+              Host = "smtp.gmail.com"
+              Port = 587
+              Username = "${{ secrets.SMTP_USERNAME }}"
+              Password = "${{ secrets.SMTP_PASSWORD }}"
+              FromEmail = "${{ secrets.SMTP_USERNAME }}"
+              FromName = "ChatFlow"
+            }
+            App = @{
+              FrontendBaseUrl = "${{ secrets.FRONTEND_URL }}"
+            }
+            Cors = @{
+              AllowedOrigins = @("${{ secrets.FRONTEND_URL }}")
+            }
+          }
+          $config | ConvertTo-Json -Depth 5 | Out-File -Encoding utf8 ./publish/appsettings.Production.json
+
+      - name: Deploy via WebDeploy
+        uses: rasmusbuchholdt/simply-web-deploy@2.1.0
+        with:
+          website-name: ${{ secrets.WEBSITE_NAME }}
+          server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
+          server-username: ${{ secrets.SERVER_USERNAME }}
+          server-password: ${{ secrets.SERVER_PASSWORD }}
+          source-path: ./publish
