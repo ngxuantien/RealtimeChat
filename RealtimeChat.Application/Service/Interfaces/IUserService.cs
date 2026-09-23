@@ -7,13 +7,13 @@ public interface IUserService
 {
     Task<User> CreateUserAsync(CreateUserRequest createUserRequest);
 
-    Task<List<User>> GetAllUserAsync();
+    Task<List<UserResponse>> GetAllUserAsync();
 
     Task<UserResponse?> GetUserByIdAsync(string id_user);
 
     Task<UserResponse?> GetUserByPhoneAsync(string phoneNumber);
 
-    Task<List<User>> SearchUserAsync(string keyword);
+    Task<List<UserResponse>> SearchUserAsync(string keyword);
 
     Task<bool> DeleteUserAsync(string id_user);
 

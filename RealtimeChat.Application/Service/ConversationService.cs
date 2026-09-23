@@ -93,6 +93,7 @@ namespace RealtimeChat.Application.Service
             {
                 ConversationId = conversation.Id,
                 UserId = userId,
+                Role = userId == request.CreatedByUserId ? ConversationMemberRole.Admin : ConversationMemberRole.Member,
                 CreatedAt = DateTime.UtcNow,
             });
 

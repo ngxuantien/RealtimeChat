@@ -28,6 +28,8 @@ public class ConversationsController : BaseApiController
     public async Task<IActionResult> CreatePrivateConversation(CreatePrivateConversationRequest request)
     {
         if (request.CurrentUserId != CurrentUserId) return Forbid();
+        if (request.CurrentUserId == request.TargetUserId)
+            return BadRequest(new { message = "Không thể tạo cuộc trò chuyện với chính mình" });
 
         var conversation = await _conversationService.CreatePrivateConversationAsync(request);
         return Ok(conversation);
@@ -122,7 +124,8 @@ public class ConversationsController : BaseApiController
             return BadRequest(new { message = "Only group conversations can be deleted" });
         }
 
-        if (conversation.CreatedBy != CurrentUserId) return Forbid();
+        var isAdmin = await _memberService.IsMemberWithRoleAsync(conversationId, CurrentUserId, ConversationMemberRole.Admin);
+        if (conversation.CreatedBy != CurrentUserId && !isAdmin) return Forbid();
 
         var result = await _conversationService.DeleteGroupAsync(conversationId);
         if(!result) return BadRequest(new { message = "Failed to delete group conversation" });

@@ -19,4 +19,6 @@ public interface IMessageService
     Task<List<Message>> GetAttachmentsAsync(string conversationId);
 
     Task<Message?> ToggleReactionAsync(string messageId, string userId, string emoji);
+
+    Task<List<Message>> SearchMessagesAsync(string conversationId, string keyword);
 }

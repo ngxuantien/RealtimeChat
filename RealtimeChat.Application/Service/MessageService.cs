@@ -1,4 +1,6 @@
-﻿using RealtimeChat.Application.DTOs.Messages;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
+using RealtimeChat.Application.DTOs.Messages;
 using RealtimeChat.Application.Repositories.Interfaces;
 using RealtimeChat.Application.Service.Interfaces;
 using RealtimeChat.Application.Utils;
@@ -7,6 +9,7 @@ using RealtimeChat.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace RealtimeChat.Application.Service;
 
@@ -200,5 +203,21 @@ public class MessageService : IMessageService
 
         await messageRepo.UpdateAsync(messageId, message);
         return message;
+    }
+
+    public async Task<List<Message>> SearchMessagesAsync(string conversationId, string keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword)) return new List<Message>();
+
+        var messageRepo = _unitOfWork.GetRepositoryAsync<Message>();
+
+        var filter = Builders<Message>.Filter.And(
+            Builders<Message>.Filter.Eq(x => x.ConversationId, conversationId),
+            Builders<Message>.Filter.Eq(x => x.IsDeleted, false),
+            Builders<Message>.Filter.Regex(x => x.Content, new BsonRegularExpression(Regex.Escape(keyword), "i")));
+
+        var messages = await messageRepo.FindAsync(filter);
+
+        return messages.OrderByDescending(x => x.CreatedAt).Take(50).ToList();
     }
 }
