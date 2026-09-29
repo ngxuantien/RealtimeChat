@@ -14,6 +14,11 @@ RUN dotnet publish RealtimeChat.API/RealtimeChat.API.csproj -c Release -o /app/p
 
 # ---------- Stage 2: Runtime ----------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+
+# OpenSSL 3.x defaults to SECLEVEL=2, which some MongoDB Atlas TLS handshakes fail
+# against with "tlsv1 alert internal error". Relax to SECLEVEL=1 to fix it.
+RUN sed -i 's/DEFAULT@SECLEVEL=2/DEFAULT@SECLEVEL=1/' /etc/ssl/openssl.cnf
+
 WORKDIR /app
 COPY --from=build /app/publish .
 
