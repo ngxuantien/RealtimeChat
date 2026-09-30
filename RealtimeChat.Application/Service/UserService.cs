@@ -59,7 +59,7 @@ public class UserService : IUserService
         catch (MongoWriteException ex)
             when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
         {
-            throw new Exception("Email or PhoneNumber already exists");
+            throw new Exception("Email hoặc số điện thoại đã tồn tại");
         }
     }
 
@@ -150,7 +150,7 @@ public class UserService : IUserService
         catch (MongoWriteException ex)
             when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
         {
-            throw new Exception("Email hoặc số điện thoại đã được sử dụng");
+            throw new Exception("Email hoặc số điện thoại đã tồn tại");
         }
 
         return user;

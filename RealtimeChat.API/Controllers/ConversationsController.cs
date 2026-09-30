@@ -59,7 +59,7 @@ public class ConversationsController : BaseApiController
         var conversation = await _conversationService.GetConversationByIdAsync(id);
 
         if (conversation == null)
-            return NotFound(new { message = "Conversation not found" });
+            return NotFound(new { message = "Không tìm thấy cuộc trò chuyện" });
 
         return Ok(conversation);
     }
@@ -73,7 +73,7 @@ public class ConversationsController : BaseApiController
         var conversation = await _conversationService.UpdateConversationAsync(id, request);
 
         if (conversation == null)
-            return NotFound(new { message = "Conversation not found or not group conversation" });
+            return NotFound(new { message = "Không tìm thấy cuộc trò chuyện hoặc đây không phải nhóm" });
 
         return Ok(conversation);
     }
@@ -86,14 +86,14 @@ public class ConversationsController : BaseApiController
         var result = await _conversationService.LeaveConversationAsync(conversationId, userId);
 
         if (!result)
-            return NotFound(new 
-            { 
-                message = "Conversation member not found" 
+            return NotFound(new
+            {
+                message = "Không tìm thấy thành viên trong cuộc trò chuyện"
             });
 
-        return Ok(new 
-            { 
-                message = "Left conversation successfully" 
+        return Ok(new
+            {
+                message = "Rời cuộc trò chuyện thành công"
             });
     }
 
@@ -105,9 +105,9 @@ public class ConversationsController : BaseApiController
         var result = await _conversationService.DeleteConversationAsync(conversationId, userId);
 
         if (!result)
-            return NotFound(new { message = "Conversation member not found" });
+            return NotFound(new { message = "Không tìm thấy thành viên trong cuộc trò chuyện" });
 
-        return Ok(new { message = "Conversation deleted for user successfully" });
+        return Ok(new { message = "Xóa lịch sử trò chuyện thành công" });
     }
 
     [HttpDelete("{conversationId}/group")]
@@ -116,21 +116,21 @@ public class ConversationsController : BaseApiController
         var conversation = await _conversationService.GetConversationByIdAsync(conversationId);
         if(conversation == null)
         {
-            return NotFound(new { message = "Conversation not found" });
+            return NotFound(new { message = "Không tìm thấy cuộc trò chuyện" });
         }
 
         if(conversation.Type != ConversationType.Group)
         {
-            return BadRequest(new { message = "Only group conversations can be deleted" });
+            return BadRequest(new { message = "Chỉ có thể xóa cuộc trò chuyện dạng nhóm" });
         }
 
         var isAdmin = await _memberService.IsMemberWithRoleAsync(conversationId, CurrentUserId, ConversationMemberRole.Admin);
         if (conversation.CreatedBy != CurrentUserId && !isAdmin) return Forbid();
 
         var result = await _conversationService.DeleteGroupAsync(conversationId);
-        if(!result) return BadRequest(new { message = "Failed to delete group conversation" });
+        if(!result) return BadRequest(new { message = "Xóa nhóm thất bại" });
 
-        return Ok(new {message = "Group conversation deleted successfully" });
+        return Ok(new {message = "Xóa nhóm thành công" });
     }
 
     [HttpPost("{id}/avatar")]
@@ -139,7 +139,7 @@ public class ConversationsController : BaseApiController
     public async Task<IActionResult> UpdateGroupAvatar(string id, [FromForm] IFormFile avatar)
     {
         var conversation = await _conversationService.GetConversationByIdAsync(id);
-        if (conversation == null) return NotFound(new { message = "Conversation not found" });
+        if (conversation == null) return NotFound(new { message = "Không tìm thấy cuộc trò chuyện" });
         if (conversation.Type != ConversationType.Group)
             return BadRequest(new { message = "Chỉ nhóm mới có thể đổi ảnh đại diện" });
 

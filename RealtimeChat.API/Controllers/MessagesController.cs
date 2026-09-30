@@ -40,7 +40,7 @@ public class MessagesController : BaseApiController
         {
             return BadRequest(new
             {
-                result = "Cannot send message",
+                message = "Không thể gửi tin nhắn",
             });
         }
 
@@ -77,7 +77,7 @@ public class MessagesController : BaseApiController
         {
             return BadRequest(new
             {
-                message = "Cannot edit message",
+                message = "Không thể chỉnh sửa tin nhắn này (tin nhắn không tồn tại, không phải của bạn hoặc đã quá 24 giờ)",
             });
         }
 
@@ -110,7 +110,7 @@ public class MessagesController : BaseApiController
         {
             return BadRequest(new
             {
-                message = "Cannot delete message",
+                message = "Không thể xóa tin nhắn này (tin nhắn không tồn tại, không phải của bạn hoặc đã quá 24 giờ)",
             });
         }
 
@@ -134,7 +134,7 @@ public class MessagesController : BaseApiController
             });
         }
 
-        return Ok(new { message = "Message deleted successfully" });
+        return Ok(new { message = "Xóa tin nhắn thành công" });
     }
 
     [HttpPost("attachments")]

@@ -42,13 +42,13 @@ public class AuthController : BaseApiController
         {
             return NotFound(new
             {
-                message = "User not found"
+                message = "Không tìm thấy người dùng"
             });
         }
 
         return Ok(new
         {
-            message = "Logout successfully"
+            message = "Đăng xuất thành công"
         });
     }
 
@@ -62,7 +62,7 @@ public class AuthController : BaseApiController
         {
             return Unauthorized(new
             {
-                message = "Invalid refresh token"
+                message = "Refresh token không hợp lệ hoặc đã hết hạn"
             });
         }
 

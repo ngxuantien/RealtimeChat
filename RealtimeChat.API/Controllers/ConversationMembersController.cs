@@ -26,7 +26,7 @@ public class ConversationMembersController : BaseApiController
     public async Task<IActionResult> UpdateRole(string conversationId, string userId, UpdateConversationMemberRoleRequest request)
     {
         var conversation = await _conversationService.GetConversationByIdAsync(conversationId);
-        if (conversation == null) return NotFound(new { message = "Conversation not found" });
+        if (conversation == null) return NotFound(new { message = "Không tìm thấy cuộc trò chuyện" });
 
         var isAdmin = await _memberService.IsMemberWithRoleAsync(conversationId, CurrentUserId, ConversationMemberRole.Admin);
         if (conversation.CreatedBy != CurrentUserId && !isAdmin) return Forbid();
@@ -34,9 +34,9 @@ public class ConversationMembersController : BaseApiController
         var result = await _memberService.UpdateRoleAsync(conversationId, userId, request);
 
         if (!result)
-            return NotFound(new { message = "Member not found" });
+            return NotFound(new { message = "Không tìm thấy thành viên" });
 
-        return Ok(new { message = "Role updated successfully" });
+        return Ok(new { message = "Cập nhật vai trò thành công" });
     }
 
     [HttpPatch("{userId}/read")]
@@ -47,7 +47,7 @@ public class ConversationMembersController : BaseApiController
         var result = await _memberService.MarkAsReadAsync(conversationId, userId, request);
 
         if (!result)
-            return NotFound(new { message = "Member not found" });
+            return NotFound(new { message = "Không tìm thấy thành viên" });
 
         await _hubContext.Clients.Group(conversationId).SendAsync("MessageRead", new
         {
@@ -56,7 +56,7 @@ public class ConversationMembersController : BaseApiController
             lastReadMessageId = request.MessageId,
         });
 
-        return Ok(new { message = "Conversation marked as read" });
+        return Ok(new { message = "Đã đánh dấu đã đọc" });
     }
 
     [HttpGet("{userId}/unread-count")]
@@ -80,7 +80,7 @@ public class ConversationMembersController : BaseApiController
     public async Task<IActionResult> UpdateMute(string conversationId, [FromBody] UpdateMuteRequest request)
     {
         var result = await _memberService.UpdateMuteAsync(conversationId, CurrentUserId, request.IsMuted);
-        if (!result) return NotFound(new { message = "Member not found" });
+        if (!result) return NotFound(new { message = "Không tìm thấy thành viên" });
 
         return Ok(new { message = "Cập nhật thông báo thành công" });
     }
@@ -89,7 +89,7 @@ public class ConversationMembersController : BaseApiController
     public async Task<IActionResult> UpdatePin(string conversationId, [FromBody] UpdatePinRequest request)
     {
         var result = await _memberService.UpdatePinAsync(conversationId, CurrentUserId, request.IsPinned);
-        if (!result) return NotFound(new { message = "Member not found" });
+        if (!result) return NotFound(new { message = "Không tìm thấy thành viên" });
 
         return Ok(new { message = "Cập nhật ghim thành công" });
     }
@@ -101,23 +101,23 @@ public class ConversationMembersController : BaseApiController
         if (!member.Any(m => m.UserId == CurrentUserId)) return Forbid();
 
         var result = await _memberService.AddMemberAsync(conversationId, request);
-        if (!result) return BadRequest(new { message = "Cannot add member" });
+        if (!result) return BadRequest(new { message = "Không thể thêm thành viên" });
 
-        return Ok(new { message = "Member added successfully" });
+        return Ok(new { message = "Thêm thành viên thành công" });
     }
 
     [HttpDelete("{userId}")]
     public async Task<IActionResult> RemoveMember(string conversationId, string userId)
     {
         var conversation = await _conversationService.GetConversationByIdAsync(conversationId);
-        if (conversation == null) return NotFound(new { message = "Conversation not found" });
+        if (conversation == null) return NotFound(new { message = "Không tìm thấy cuộc trò chuyện" });
 
         var isAdmin = await _memberService.IsMemberWithRoleAsync(conversationId, CurrentUserId, ConversationMemberRole.Admin);
         if (conversation.CreatedBy != CurrentUserId && !isAdmin) return Forbid();
 
         var result = await _memberService.RemoveMemberAsync(conversationId, userId);
-        if (!result) return NotFound(new { message = "Member not found" });
+        if (!result) return NotFound(new { message = "Không tìm thấy thành viên" });
 
-        return Ok(new { message = "Member removed successfully" });
+        return Ok(new { message = "Xóa thành viên thành công" });
     }
 }
