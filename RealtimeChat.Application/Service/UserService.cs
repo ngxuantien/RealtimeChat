@@ -57,8 +57,7 @@ public class UserService : IUserService
             };
         }
         catch (MongoWriteException ex)
-            when (ex.WriteError?.Category ==
-                  ServerErrorCategory.DuplicateKey)
+            when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
         {
             throw new Exception("Email or PhoneNumber already exists");
         }

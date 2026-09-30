@@ -92,8 +92,7 @@ public class UsersController : BaseApiController
     }
 
     [HttpGet("search")]
-    public async Task<IActionResult> SearchUsers(
-    [FromQuery] string keyword)
+    public async Task<IActionResult> SearchUsers([FromQuery] string keyword)
     {
         var users = await _userService.SearchUserAsync(keyword);
 
