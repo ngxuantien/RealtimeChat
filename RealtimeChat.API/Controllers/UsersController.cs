@@ -60,7 +60,7 @@ public class UsersController : BaseApiController
         {
             return NotFound(new
             {
-                message = "User not found"
+                message = "Không tìm thấy người dùng"
             });
         }
 
@@ -109,7 +109,7 @@ public class UsersController : BaseApiController
         {
             return NotFound(new
             {
-                message = "User not found"
+                message = "Không tìm thấy người dùng"
             });
         }
 
@@ -126,7 +126,7 @@ public class UsersController : BaseApiController
             var user = await _userService.UpdateUserAsync(id_user, request);
 
             if (user == null)
-                return NotFound(new { message = "User not found" });
+                return NotFound(new { message = "Không tìm thấy người dùng" });
 
             return Ok(user);
         }
@@ -160,7 +160,7 @@ public class UsersController : BaseApiController
         var user = await _userService.UpdateUserAsync(id_user, new UpdateUserRequest { AvatarUrl = avatarUrl });
 
         if (user == null)
-            return NotFound(new { message = "User not found" });
+            return NotFound(new { message = "Không tìm thấy người dùng" });
 
         return Ok(user);
     }
